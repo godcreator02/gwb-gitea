@@ -16,19 +16,32 @@ description: 仓根 AGENTS.md 的正本——render 摆过去，只写仓专属�
 `docs-site/content/docs/`：[系统地图](docs-site/content/docs/system-map.mdx) → 要改的那块的页 →
 [术语表](docs-site/content/docs/glossary.mdx)。在途的活在 `docs-site/content/spec/`。
 
+## 这个仓的形状
+
+纯 node 半插件，**一条命令** `gitea.http`：语义（配方、读法、token 仪式）全住
+`skills/SKILL.md` 随包发，代码只做管道——**别往 index.ts 里加「建仓命令」「发版命令」**，
+那是要写死语义的老路；新配方写进说明书。纯逻辑在 `src/core.ts`（参数收窄、URL 组装、
+回执整形、脱敏），测试就在旁边 `tests/`；真发请求只发生在 `src/index.ts` 的 handler 里。
+写件的红线（相对 import 带 `.js`、裸名只有词汇表包、cordis 不进 dependencies）读
+skill「gwb-devkit」。
+
 ## 怎么跑
 
 ```bash
 pnpm install
-pnpm test
+pnpm check        # typecheck + oxlint + vitest
+pnpm build        # tsc 直出 dist/
 ```
+
+内循环验机：`devkit.dev { "home": "<隔离 home>", "dir": "<本仓>" }`；真调用用
+`gitea.http GET /version`（免 token）。
 
 ## 门禁
 
 提交前都要绿：
 
 ```bash
-pnpm test
+pnpm check
 cd docs-site && pnpm doc && pnpm build
 ```
 
