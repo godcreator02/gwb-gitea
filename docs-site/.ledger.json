@@ -1,0 +1,14 @@
+{
+  "content/docs/index.mdx": {
+    "../src/index.ts:10-10": {
+      "kind": "git",
+      "blob": "49739e04044d4a41ce0dadce5e038454d8301609",
+      "commit": "3f83890cb097a1318689807857ee07e6fd87636a",
+      "lines": [
+        10,
+        10
+      ],
+      "hash": "c89aecb4a9cba86f05fcd85d01fe1aa878d5ae088b7a44faf61ff55e6b9ba9f3"
+    }
+  }
+}
