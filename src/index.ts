@@ -27,10 +27,8 @@ export const name = 'gwb-gitea'
 /** 命令登记的 plugin 字段写包名——index 回执按它归属（commands 0.4 起的规范） */
 const PKG = '@godcreator/gwb-gitea'
 
-/** 缺哪个都不挂——inject 是 cordis 的等待机制，不是建议。gwbSkills 也硬依赖：
- *  ctx.inject 的回调在「服务已就绪 + loader 子树热挂」的组合下不触发（2026-09-15 实弹撞的），
- *  硬依赖让 cordis 替我们等到位、apply 里直取直注册，绕开那层调度 */
-export const inject = ['gwbCommands', 'gwbSettings', 'gwbSkills']
+/** 缺哪个都不挂——inject 是 cordis 的等待机制，不是建议 */
+export const inject = ['gwbCommands', 'gwbSettings']
 
 /** 说明书随包发，从产物位置反推：dist/index.js 的上一级就是 skills/ */
 const SKILLS_DIR = new URL('../skills/', import.meta.url)
@@ -44,13 +42,16 @@ export function apply(ctx: GwbContext): void {
   const log = ctx.logger(name)
   const commands = ctx.gwbCommands
   const settings = ctx.gwbSettings
-  const skills = ctx.gwbSkills
   // inject 保证了它们在，这几句只是把类型收窄
-  if (commands === undefined || settings === undefined || skills === undefined) return
+  if (commands === undefined || settings === undefined) return
   log.info('gitea 的手 起来了')
 
-  // 说明书：目录从产物位置反推（dist/index.js 的上一级就是 skills/）
-  ctx.effect(() => skills.register(SKILLS_DIR))
+  // 说明书：**一份说明书一个子目录**（skills/gitea/SKILL.md）——gwb-skills 的收集器只扫
+  // skills/ 的子目录，平铺的 SKILL.md 它一声不吭地跳过（2026-09-15 实弹撞的）。
+  // 局部注入——skills 件不在，命令照常，只是 skill.list 里没这份
+  ctx.inject(['gwbSkills'], (c) => {
+    c.effect(() => c.gwbSkills.register(SKILLS_DIR))
+  })
 
   settings.define({
     key: BASE_URL_KEY,

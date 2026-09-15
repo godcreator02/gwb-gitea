@@ -1,6 +1,6 @@
 {
   "name": "@godcreator/gwb-gitea",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {"name": "godcreator"},
   "description": "gitea 的手：一条 gitea.http 通用命令把 agent 组装好的 API 调用发往配置的 gitea 实例；语义住随包发的说明书（cookbook），代码只做管道",
   "type": "module",

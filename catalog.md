@@ -11,7 +11,7 @@
 
 ## 依赖
 
-`gwbCommands`、`gwbSettings`、`gwbSkills`（硬依赖，inject——说明书要挂上才算装好）。包级 peer：gwb-plugin-api / gwb-commands / gwb-settings / gwb-skills
+`gwbCommands`、`gwbSettings`（硬依赖，inject）；`gwbSkills` 局部注入挂说明书（skills/gitea/SKILL.md——一份说明书一个子目录）。包级 peer：gwb-plugin-api / gwb-commands / gwb-settings / gwb-skills
 
 ## 命令
 
