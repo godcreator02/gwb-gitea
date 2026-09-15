@@ -75,7 +75,7 @@ describe('gwb-gitea', () => {
     expect(h.defines.map((d) => d.key).sort()).toEqual(['base-url', 'token'])
     expect(h.defines.find((d) => d.key === 'token')?.type).toBe('secret')
     expect([...h.handlers.keys()]).toEqual(['gitea.http'])
-    for (const cmd of h.commands) expect(cmd.plugin).toBe(name)
+    for (const cmd of h.commands) expect(cmd.plugin).toBe('@godcreator/gwb-gitea')
     expect(h.commands[0]?.description).toContain('method')
     expect(h.skillDirs).toHaveLength(1)
     expect(h.skillDirs[0]).toMatch(/\/skills\/$/)

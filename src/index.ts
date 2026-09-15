@@ -24,6 +24,9 @@ import {
  */
 export const name = 'gwb-gitea'
 
+/** 命令登记的 plugin 字段写包名——index 回执按它归属（commands 0.4 起的规范） */
+const PKG = '@godcreator/gwb-gitea'
+
 /** 缺哪个都不挂——inject 是 cordis 的等待机制，不是建议 */
 export const inject = ['gwbCommands', 'gwbSettings']
 
@@ -70,7 +73,7 @@ export function apply(ctx: GwbContext): void {
         name: 'gitea.http',
         description:
           '把一条 gitea API 调用发出去：{ method, path, query?, body?, file? }——path 不带 /api/v1（管道补）；回 { status, body, truncated? }，2xx/4xx/5xx 都算发出去了、解释权在调用方；file={ path, field?, name? } 出现即 multipart（上传产物用）。配方与读法见 skill「gitea」',
-        plugin: name,
+        plugin: PKG,
       },
       async (args: unknown) => {
         const parsed = parseArgs(args)
