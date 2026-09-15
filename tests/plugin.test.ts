@@ -72,8 +72,8 @@ describe('gwb-gitea', () => {
   it('挂上即：两项设置（token 是 secret 型）、一条命令、说明书目录注册', () => {
     const h = harness()
     apply(h.ctx)
-    expect(h.defines.map((d) => d.key).sort()).toEqual(['gitea.base-url', 'gitea.token'])
-    expect(h.defines.find((d) => d.key === 'gitea.token')?.type).toBe('secret')
+    expect(h.defines.map((d) => d.key).sort()).toEqual(['base-url', 'token'])
+    expect(h.defines.find((d) => d.key === 'token')?.type).toBe('secret')
     expect([...h.handlers.keys()]).toEqual(['gitea.http'])
     for (const cmd of h.commands) expect(cmd.plugin).toBe(name)
     expect(h.commands[0]?.description).toContain('method')
@@ -111,7 +111,7 @@ describe('gwb-gitea', () => {
   })
 
   it('没发出去才 ok:false，token 在错误文案里被脱敏', async () => {
-    const h = harness({ 'gitea.token': 'sectok1234567890' })
+    const h = harness({ token: 'sectok1234567890' })
     apply(h.ctx)
     vi.stubGlobal(
       'fetch',
@@ -127,7 +127,7 @@ describe('gwb-gitea', () => {
   })
 
   it('token 配了就注入 Authorization；没配就不带这个头', async () => {
-    const withToken = harness({ 'gitea.token': 'tok-xyz' })
+    const withToken = harness({ token: 'tok-xyz' })
     apply(withToken.ctx)
     const seen: Array<Record<string, string> | undefined> = []
     vi.stubGlobal(

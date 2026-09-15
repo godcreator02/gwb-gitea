@@ -6,8 +6,9 @@ import { isRecord } from '@godcreator/gwb-plugin-api'
  * 真发请求的那半在 index.ts。
  */
 
-export const BASE_URL_KEY = 'gitea.base-url'
-export const TOKEN_KEY = 'gitea.token'
+/** 设置键不带分区——分区由条目 id 末段自动来（这个件就是 gitea），settings 不收带点的键 */
+export const BASE_URL_KEY = 'base-url'
+export const TOKEN_KEY = 'token'
 export const DEFAULT_BASE_URL = 'https://git.tianshen02.online:28377'
 
 /** 普通调用 60s；带 file 的大件上传 10 分钟——传一半被掐了比慢更糟 */
