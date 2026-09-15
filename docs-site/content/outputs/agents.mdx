@@ -1,0 +1,39 @@
+---
+title: AGENTS
+description: 仓根 AGENTS.md 的正本——render 摆过去，只写仓专属的
+---
+
+# gwb-gitea
+
+**本页回答**：在这个仓干活的 agent 先看什么、怎么跑、门禁是哪几条、什么碰不得。
+
+通用纪律（TDD、模块经接口连接、盘问、六区规则、文档怎么写）不在这儿——正本是随
+`@godcreator/docfirst-workflow` 发的 skill「docfirst-docs」，读它。这一页只写仓专属的，
+压在 60 行内。
+
+## 先读
+
+`docs-site/content/docs/`：[系统地图](docs-site/content/docs/system-map.mdx) → 要改的那块的页 →
+[术语表](docs-site/content/docs/glossary.mdx)。在途的活在 `docs-site/content/spec/`。
+
+## 怎么跑
+
+```bash
+pnpm install
+pnpm test
+```
+
+## 门禁
+
+提交前都要绿：
+
+```bash
+pnpm test
+cd docs-site && pnpm doc && pnpm build
+```
+
+## 红线
+
+- 改了代码要连着改现状页；改了 `content/outputs/` 下的 mdx 要 `pnpm doc:render` 重摆，生成物跟源一起提交
+- 这份 AGENTS.md 是生成物，正本是 `docs-site/content/outputs/agents.mdx`，改那边
+- 轨迹卡只增不改
