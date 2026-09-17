@@ -1,3 +1,3 @@
 {
-  "pages": ["hatch", "..."]
+  "pages": ["inbox", "hatch", "..."]
 }
