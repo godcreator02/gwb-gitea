@@ -5,3 +5,6 @@ allowBuilds:
   '@parcel/watcher': false
   # 浏览器半的打包器要下二进制——不批它，pnpm build 当场死
   esbuild: true
+
+# peer 对不上时 install 当场报错退出，不只 WARN
+strictPeerDependencies: true
