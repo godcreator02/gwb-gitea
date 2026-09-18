@@ -2,7 +2,7 @@
   "name": "@godcreator/gwb-gitea",
   "version": "0.1.1",
   "author": {"name": "godcreator"},
-  "description": "gitea 的手：一条 gitea.http 通用命令把 agent 组装好的 API 调用发往配置的 gitea 实例；语义住随包发的说明书（cookbook），代码只做管道",
+  "description": "gitea 的通用 HTTP 手：一条命令把 agent 组装好的 API 调用发往配置的 gitea 实例——路径不带 /api/v1、token 由管道注入（住设置）。服务无；skill 1 份；命令 1 条。",
   "type": "module",
   "exports": {
     ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
@@ -20,7 +20,6 @@
     "prepublishOnly": "pnpm build"
   },
   "engines": { "node": ">=24" },
-  "//peer": "硬依赖 gwbCommands 与 gwbSettings（inject）；gwbSkills 局部注入挂说明书。写 >= 不写 ^：caret 在 0.0.x 锁死 patch",
   "peerDependencies": {
     "@godcreator/gwb-plugin-api": ">=0.1.0",
     "@godcreator/gwb-commands": ">=0.2.0",
