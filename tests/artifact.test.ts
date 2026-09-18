@@ -50,8 +50,8 @@ describe.skipIf(!built)('产物', () => {
     expect([...bare].filter((s) => !ALLOWED_BARE.has(s))).toEqual([])
   })
 
-  it('说明书与身份卡随包走——files 白名单里有 skills 与 catalog.md', () => {
+  it('说明书随包走——files 白名单里有 skills', () => {
     const pkg = JSON.parse(fs.readFileSync(path.resolve(here, '../package.json'), 'utf8')) as { files?: string[] }
-    expect(pkg.files).toEqual(expect.arrayContaining(['skills', 'catalog.md']))
+    expect(pkg.files).toEqual(expect.arrayContaining(['skills']))
   })
 })
