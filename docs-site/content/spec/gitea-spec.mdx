@@ -1,0 +1,87 @@
+---
+title: gwb-gitea 初版 spec（历史留档）
+description: 2026-09-15 实施前写下的设计正本——命令形状、设置组、说明书结构、验收；件已迭代到 0.1.x，本页只作历史
+---
+
+这一页是 gwb-gitea 落地**之前**写的设计正本，原先住在单元根那层元数据仓里（单元 `26091513gta`）。
+2026-09-20 单元重组时把它归位到这里——原文一字未改，整段包在代码块里（正文里的
+`{owner}` / `{repo}` 这类花括号直接进 mdx 会炸 build）。
+
+现状看[现状区](/docs/plugin)，来龙去脉看[轨迹区](/trajectory)。
+
+```markdown
+# gwb-gitea spec
+
+一台 gitea 的**通用 HTTP 手**：一条命令把 agent 组装好的 API 调用发往配置的 gitea 实例。
+语义全住说明书（cookbook），代码只做管道。前身 god-gitea（DSH 时代），其 `helper.api(method,
+path, body)` 的形状原样继承：路径不带 `/api/v1` 前缀、token 由管道注入、凭据住设置。
+
+包名 `@godcreator/gwb-gitea`，首版 0.1.0。
+
+## 1. 命令 `gitea.http`
+
+入参：
+
+- `method`：GET / POST / PUT / PATCH / DELETE / HEAD
+- `path`：gitea API 路径，不带 `/api/v1`（管道补），如 `/user/repos`；永远相对设置里的
+  `baseUrl` 解析
+- `query?`：对象，序列化成 querystring
+- `body?`：JSON 对象，默认 `application/json`
+- `file?`：`{ path, field?, name? }`——出现即走 `multipart/form-data`，文件从盘上读
+  （release asset 上传：`file.path` 指本地文件，asset 名走 query 的 `name`，字段名默认
+  `attachment`）
+
+发送：
+
+- URL ＝ `baseUrl` ＋ `/api/v1` ＋ `path` ＋ query
+- `Authorization: token <gitea.token 设置项>` 由管道注入；`?token=` query 形式透传兼容
+  （gitea 双认）
+- Electron 主进程的 node fetch；超时：普通调用 60s，带 `file` 10 分钟（大件上传）
+
+回执 `{ ok, status, body }`：
+
+- 2xx / 4xx / 5xx 都是「发出去了」：`status` 与 `body` 原样交回，**解释权在调用方**——
+  401 是 token 的事、409 是已存在、422 是参数（cookbook 给读法）
+- `body` 按 content-type 处理：JSON 解开，其余按文本；超过 64KB 截断，回执带截断标记
+  与「用 query 收窄再取」的提示
+- `ok:false` 只表示根本没发出去：网络不通、`baseUrl` / `token` 没配、参数形状不对——
+  错误文案自带指路（哪一项、去哪儿配）
+- 回执与日志对 `Authorization` 脱敏：token 值在任何输出里都以 `***` 出现
+
+## 2. 设置组 `gitea`（住 gwb-settings，随 home 走、不随包发）
+
+- `gitea.baseUrl`：默认 `https://git.tianshen02.online:28377`
+- `gitea.token`：默认空；空着调写接口收 401 原样回，说明书第一步就是配它的路
+
+## 3. 说明书（SKILL.md，随包发、经 gwb-skills 挂给 agent）
+
+cookbook 三段：
+
+- **接入**：网页开 token（只给 api scope）→ `settings.set` 写 `gitea.token` →
+  `gitea.http GET /version`（免 token）验链路 → `GET /user`（带 token）验收
+- **配方**：建仓（POST /user/repos）、列仓（GET /user/repos，分页 page/limit）、
+  建 draft release（POST /repos/{owner}/{repo}/releases）、传 asset
+  （POST /repos/{o}/{r}/releases/{id}/assets?name=… ＋ file）、列 release、
+  删草稿仓（DELETE /repos/{o}/{r}）
+- **读法**：分页怎么看、401/403/404/409/422 各自意味着什么、asset 上传的字段名
+
+## 4. 技术形状
+
+- 纯 node 半 cordis 件：一条命令的注册＋管道，整个件只有 node 半
+- 纯逻辑单独成文件、单测就在旁边（vitest，进仓门禁）：
+  - 请求组装：前缀补一次、query 序列化、multipart 组装
+  - 回执整形：JSON 探测、截断、脱敏
+- peers：`@godcreator/gwb-commands`、`@godcreator/gwb-settings`、
+  `@godcreator/gwb-plugin-api`
+- 仓由 devkit.scaffold 落在本单元，一仓一包一插件；内循环 devkit.dev 隔离 home 验真调用，
+  发版走 devkit.release，装 default
+
+## 5. 验收
+
+隔离 home 里，agent 只凭说明书与 `gitea.http` 一条命令走完全程：
+
+`GET /version` → 配 token → `GET /user` → 建草稿仓 → 建 draft release → 传一个文件 →
+列 release 看到 asset → 删草稿仓。
+
+全程 token 不出现在任何回执与日志。
+```
