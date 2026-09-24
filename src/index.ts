@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { type GwbContext } from '@godcreator/gwb-plugin-api'
-// 只为激活 declare module 'cordis'——ctx 上由此长出 gwbCommands / gwbSettings / gwbSkills
+import type { GwbContext } from '@godcreator/gwb-plugin-api'
+// 空的类型 import 只为让三个包的 `declare module 'cordis'` 生效，ctx 上才有 gwbCommands / gwbSettings / gwbSkills 的类型
 import type {} from '@godcreator/gwb-commands'
 import type {} from '@godcreator/gwb-settings'
 import type {} from '@godcreator/gwb-skills'
@@ -18,8 +18,8 @@ import {
 } from './core.js'
 
 /**
- * gitea 的手 node 半：一条 `gitea.http` 命令——把 agent 组装好的 gitea API 调用发出去。
- * 语义（配方、读法、token 仪式）全住随包发的 skills/SKILL.md，代码只做管道。
+ * gitea HTTP 插件（只有 node 侧）：一条 `gitea.http` 命令——把 agent 组装好的 gitea API 调用发出去。
+ * 语义（配方、读法、token 用法）全在随包发的 skills/gitea/SKILL.md，代码只做管道。
  * 两项设置（base-url、token）住 gwbSettings，token 是 secret 型不随包发。
  */
 export const name = 'gwb-gitea'
@@ -27,7 +27,7 @@ export const name = 'gwb-gitea'
 /** 命令登记的 plugin 字段写包名——index 回执按它归属（commands 0.4 起的规范） */
 const PKG = '@godcreator/gwb-gitea'
 
-/** 缺哪个都不挂——inject 是 cordis 的等待机制，不是建议 */
+/** 缺哪个都不加载——inject 是 cordis 的等待机制，不是建议 */
 export const inject = ['gwbCommands', 'gwbSettings']
 
 /** 说明书随包发，从产物位置反推：dist/index.js 的上一级就是 skills/ */
@@ -38,17 +38,17 @@ function asString(value: unknown): string {
 }
 
 export function apply(ctx: GwbContext): void {
-  // 件说话的正规出口：logger 进得了日志窗格，console 进不了
+  // 日志用 ctx.logger：它的输出进日志窗格，console 的不进
   const log = ctx.logger(name)
   const commands = ctx.gwbCommands
   const settings = ctx.gwbSettings
   // inject 保证了它们在，这几句只是把类型收窄
   if (commands === undefined || settings === undefined) return
-  log.info('gitea 的手 起来了')
+  log.info('gitea HTTP 插件已加载')
 
   // 说明书：**一份说明书一个子目录**（skills/gitea/SKILL.md）——gwb-skills 的收集器只扫
-  // skills/ 的子目录，平铺的 SKILL.md 它一声不吭地跳过（2026-09-15 实弹撞的）。
-  // 局部注入——skills 件不在，命令照常，只是 skill.list 里没这份
+  // skills/ 的子目录，平铺的 SKILL.md 会被不报错地跳过（2026-09-15 实际遇到过）。
+  // 局部注入——说明书插件没装，命令照常，只是 skill.list 里没这份
   ctx.inject(['gwbSkills'], (c) => {
     c.effect(() => c.gwbSkills.register(SKILLS_DIR))
   })
@@ -68,7 +68,7 @@ export function apply(ctx: GwbContext): void {
     default: '',
   })
 
-  // 命令面：register 回注销函数，包在 ctx.effect 里——条目停了名字也跟着摘（2026-09-09 撞过）
+  // 命令：register 返回注销函数，包在 ctx.effect 里——条目停用时命令名也跟着注销（2026-09-09 遇到过）
   ctx.effect(() =>
     commands.register(
       {

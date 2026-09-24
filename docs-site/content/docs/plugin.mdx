@@ -1,21 +1,21 @@
 ---
-title: 挂上去的面
-description: 这个件挂了哪几个面、哪个缺了就不挂、说明书怎么随包走
+title: 依赖的服务与说明书
+description: 这个插件用到工作台的哪几个服务、缺了哪个就不加载、依赖怎么写、说明书怎么随包发布
 ---
 
-# 挂上去的面
+# 依赖的服务与说明书
 
-**本页回答**：`gwb-gitea` 挂在工作台的哪几个面上、各是硬依赖还是局部注入、说明书从哪儿进收集器。
+**本页回答**：`gwb-gitea` 用到工作台的哪几个服务、各是硬依赖还是局部注入、`package.json` 里依赖怎么写、说明书怎么进说明书插件的收集器。
 
 ## 依赖
 
-| 面 | 怎么拿 | 缺了会怎样 |
+| 服务 | 怎么拿 | 缺了会怎样 |
 | --- | --- | --- |
-| 命令总线 `gwbCommands` | `export const inject` | **挂不上**——inject 是等待机制，不是建议 |
+| 命令总线 `gwbCommands` | `export const inject` | **不加载**——inject 是等待机制，不是建议 |
 | 设置 `gwbSettings` | 同上 | 同上 |
-| 说明书 `gwbSkills` | `ctx.inject([...], fn)` 局部注入 | 照常挂：命令照旧，只是 `skill.list` 里没这一份 |
+| 说明书 `gwbSkills` | `ctx.inject([...], fn)` 局部注入 | 照常加载：命令照旧，只是 `skill.list` 里没这一份 |
 
-两条硬注入写在一行上：
+两个硬依赖写在一行上：
 
 {/* ref file="../src/index.ts" lines="31-31" */}
 
@@ -23,12 +23,12 @@ description: 这个件挂了哪几个面、哪个缺了就不挂、说明书怎�
 
 {/* ref file="../src/index.ts" lines="52-52" */}
 
-包级 peer 还有 `@godcreator/gwb-plugin-api`——`GwbContext` 这类类型的词汇表包，运行时整句擦除。
+`package.json` 的 `peerDependencies` 只有内核包 `@godcreator/gwb-kernel-desktop`，范围是验证时那个内核的 `^x.y.z`。上面三个插件与词汇表包 `@godcreator/gwb-plugin-api` 只取类型，写在 dev，编译后整句消失；`isRecord` 这类无状态小函数由插件自带（`src/vocab.ts`）。
 
-## 说明书怎么随包走
+## 说明书怎么随包发布
 
-一份说明书一个子目录——`gwb-skills` 的收集器只扫 `skills/` 下的子目录，平铺的 `SKILL.md`
-它一声不吭地跳过。目录位置从产物位置反推（`dist/index.js` 的上一级就是 `skills/`），不写死盘上路径：
+一份说明书一个子目录——说明书插件 `gwb-skills` 的收集器只扫 `skills/` 下的子目录，平铺的 `SKILL.md`
+会被不报错地跳过。目录位置从产物位置反推（`dist/index.js` 的上一级就是 `skills/`），不写死盘上路径：
 
 {/* ref file="../src/index.ts" lines="33-34" */}
 {/* tree dir="../skills" depth="2" */}

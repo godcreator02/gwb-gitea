@@ -2,7 +2,7 @@
   "name": "@godcreator/gwb-gitea",
   "version": "0.1.4",
   "author": {"name": "godcreator"},
-  "description": "gitea 的通用 HTTP 手：一条命令把 agent 组装好的 API 调用发往配置的 gitea 实例——路径不带 /api/v1、token 由管道注入（住设置）、回执整形；语义住随包发的 skill（cookbook），代码只做管道。服务无；skill 1 份；命令 1 条。",
+  "description": "gitea HTTP 插件：一条 gitea.http 命令把 agent 组装好的 API 调用发往配置的 gitea 实例，补上 /api/v1、注入 token、整理回执；配方与读法写在随包发布的说明书里。",
   "type": "module",
   "exports": {
     ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
@@ -16,24 +16,22 @@
     "test": "vitest run --passWithNoTests --tags-filter=!slow",
     "test:all": "vitest run --passWithNoTests",
     "check": "pnpm run typecheck && pnpm run lint && pnpm run test",
-    "//prepublishOnly": "发版前强制构建一次。pnpm check 不构建，少了这条会把上一版的 dist/ 原样发出去——静默的",
+    "//prepublishOnly": "发版前强制构建一次。pnpm check 不构建，少了这条会把上一版的 dist/ 原样发出去，而且不报错",
     "prepublishOnly": "pnpm build"
   },
   "engines": { "node": ">=24" },
+  "//peerDependencies": "内核包的 ^ 范围就是这个插件兼容哪个内核。node 侧构建产物没有按值 import cordis（只 import type），所以 peer 里没有 cordis。规矩见 devkit 文档站「依赖怎么写」与「兼容哪个内核」",
   "peerDependencies": {
-    "@godcreator/gwb-plugin-api": "^0.1.2",
-    "@godcreator/gwb-commands": "^0.4.5",
-    "@godcreator/gwb-settings": "^0.3.1",
-    "@godcreator/gwb-skills": "^0.4.3"
+    "@godcreator/gwb-kernel-desktop": "^0.4.1"
   },
+  "//devDependencies": "命令总线、设置、说明书三个插件与词汇表包只取类型，运行时经 inject 使用（gwbSkills 是局部注入）；cordis 只给本地构建与类型检查",
   "devDependencies": {
-    "@godcreator/gwb-plugin-api": "0.1.2",
-    "@godcreator/gwb-repo-kit": "0.3.0",
-    "@godcreator/gwb-commands": "0.4.5",
-    "@godcreator/gwb-settings": "0.3.1",
-    "@godcreator/gwb-skills": "0.4.3",
+    "@godcreator/gwb-commands": "^0.4.6",
+    "@godcreator/gwb-plugin-api": "^0.4.1",
+    "@godcreator/gwb-settings": "^0.3.2",
+    "@godcreator/gwb-skills": "^0.4.4",
     "@types/node": "^24.0.0",
-    "cordis": "4.0.0-rc.9",
+    "cordis": "4.0.0-rc.10",
     "oxlint": "1.76.0",
     "oxlint-tsgolint": "7.0.2001",
     "typescript": "^7.0.2",

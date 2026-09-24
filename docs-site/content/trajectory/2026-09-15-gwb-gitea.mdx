@@ -1,0 +1,13 @@
+---
+born-at: 2026-09-15T13:35
+type: root
+label: gwb-gitea
+---
+
+## 背景
+
+agent 在工作台里要操作 gitea（建仓、发版、查包），需要一个能发 gitea API 请求的插件。祖先是 god-gitea（https-only 的约定从它继承）。2026-09-15 用 devkit 模板建仓，发了 0.1.0（commit 记录见本仓第一个提交）。
+
+## 结论与边界
+
+只做管道：一条 `gitea.http` 命令补上 `/api/v1`、注入 token、整理回执（`file` 出现即 multipart 上传，body 超过 64KB 截断，secret 脱敏），两项设置（`base-url`、`token`）。配方与读法全写在随包发布的说明书里，不加「建仓」「发版」这类写死语义的命令。只有 node 侧，模板的浏览器侧已删掉。

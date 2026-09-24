@@ -3,8 +3,7 @@ import { apply, name } from '../src/index.js'
 import type { GwbContext } from '@godcreator/gwb-plugin-api'
 
 /**
- * 挂载与命令面：手搓替身（模板期改成了手写件，repo-kit 的挂载守卫形状对不上——
- * timer 仓同款路子）。网络那半全走 stub 的 fetch：真发请求的验证在隔离 home 的
+ * 加载与命令：替身自己写。网络部分全走替换掉的 fetch；真发请求的验证在隔离 home 的
  * devkit.dev 里，不在这儿。
  */
 

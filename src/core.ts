@@ -1,17 +1,17 @@
-import { isRecord } from '@godcreator/gwb-plugin-api'
+import { isRecord } from './vocab.js'
 
 /**
- * gitea.http 的纯逻辑半：参数收窄、URL 组装、回执整形、脱敏。
- * 不碰网、不碰盘——喂输入看输出，测试就在旁边 tests/core.test.ts。
- * 真发请求的那半在 index.ts。
+ * gitea.http 的纯逻辑部分：参数收窄、URL 组装、回执整形、脱敏。
+ * 不访问网络、不读写磁盘——给输入看输出，测试在 tests/core.test.ts。
+ * 真发请求的部分在 index.ts。
  */
 
-/** 设置键不带分区——分区由条目 id 末段自动来（这个件就是 gitea），settings 不收带点的键 */
+/** 设置键不带分区——分区由条目 id 末段自动决定（这个插件的条目就是 gitea），settings 不收带点的键 */
 export const BASE_URL_KEY = 'base-url'
 export const TOKEN_KEY = 'token'
 export const DEFAULT_BASE_URL = 'https://git.tianshen02.online:28377'
 
-/** 普通调用 60s；带 file 的大件上传 10 分钟——传一半被掐了比慢更糟 */
+/** 普通调用 60s；带 file 的大文件上传 10 分钟——传到一半被超时中断比慢更糟 */
 export const DEFAULT_TIMEOUT_MS = 60_000
 export const FILE_TIMEOUT_MS = 600_000
 
@@ -19,7 +19,7 @@ export const FILE_TIMEOUT_MS = 600_000
 export const BODY_LIMIT = 64 * 1024
 
 const METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'])
-/** fetch 对这两个 method 带 body 会直接 TypeError，在收窄这层就拦下并说人话 */
+/** fetch 对这两个 method 带 body 会直接 TypeError，在收窄这层就拦下并给出看得懂的错误 */
 const BODYLESS = new Set(['GET', 'HEAD'])
 
 export interface HttpArgs {
@@ -33,7 +33,7 @@ export interface HttpArgs {
 export type Parsed<T> = { ok: true; value: T } | { ok: false; error: string }
 
 /**
- * path 规整：去空白、去前导斜杠、剥掉手滑带上的 `api/v1` 前缀（管道会补，带了就重复）。
+ * path 规整：去空白、去前导斜杠、剥掉误带上的 `api/v1` 前缀（管道会补，带了就重复）。
  * 只剥一次——剥完还以 api/v1 开头的是调用方真的有这个目录，不动。
  */
 export function stripPath(path: string): string {

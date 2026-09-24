@@ -3,33 +3,34 @@
 **本页回答**：在这个仓干活的 agent 先看什么、怎么跑、门禁是哪几条、什么碰不得。
 
 通用纪律（TDD、模块经接口连接、盘问、六区规则、文档怎么写）不在这儿——正本是随
-`@godcreator/docfirst-workflow` 发的 skill「docfirst-docs」，读它。这一页只写仓专属的，
+`@godcreator/gwb-docfirst-workflow` 插件发布的 skill「docfirst-docs」，读它。这一页只写仓专属的，
 压在 60 行内。
 
 ## 先读
 
 `docs-site/content/docs/`：[系统地图](docs-site/content/docs/system-map.mdx) → 要改的那块的页 →
-[术语表](docs-site/content/docs/glossary.mdx)。在途的活在 `docs-site/content/spec/`，
-设计 spec 在单元根 `../spec/gitea.md`。
+[术语表](docs-site/content/docs/glossary.mdx)。在途的活与初版设计 spec（`gitea-spec.mdx`）都在
+`docs-site/content/spec/`。
 
 ## 这个仓的形状
 
-纯 node 半插件，**一条命令** `gitea.http`：语义（配方、读法、token 仪式）全住
-`skills/SKILL.md` 随包发，代码只做管道——**别往 index.ts 里加「建仓命令」「发版命令」**，
-那是要写死语义的老路；新配方写进说明书。纯逻辑在 `src/core.ts`（参数收窄、URL 组装、
-回执整形、脱敏），测试就在旁边 `tests/`；真发请求只发生在 `src/index.ts` 的 handler 里。
-写件的红线（相对 import 带 `.js`、裸名只有词汇表包、cordis 不进 dependencies）读
-skill「gwb-devkit」。
+只有 node 侧的插件，**一条命令** `gitea.http`：语义（配方、读法、token 用法）全写在
+`skills/gitea/SKILL.md`、随包发布，代码只做管道——**别往 index.ts 里加「建仓命令」「发版命令」**，
+那等于把语义写死在代码里；新配方写进说明书。纯逻辑在 `src/core.ts`（参数收窄、URL 组装、
+回执整形、脱敏），测试在 `tests/`；真发请求只发生在 `src/index.ts` 的 handler 里。
+`isRecord` 由插件自带（`src/vocab.ts`），词汇表包只 `import type`。依赖写法：peer 只写内核包
+`@godcreator/gwb-kernel-desktop`，别的 `@godcreator` 包与 cordis 都在 dev；构建产物里的包名
+import 只能是 node 内置模块、electron、cordis。写插件的其余规矩读 skill「gwb-devkit」。
 
 ## 怎么跑
 
 ```bash
 pnpm install
 pnpm check        # typecheck + oxlint + vitest
-pnpm build        # tsc 直出 dist/
+pnpm build        # tsc 输出到 dist/
 ```
 
-内循环验机：`devkit.dev { "home": "<隔离 home>", "dir": "<本仓>" }`；真调用用
+在隔离 home 里验证改动：`devkit.dev { "home": "<隔离 home>", "dir": "<本仓>" }`；真调用用
 `gitea.http GET /version`（免 token）。
 
 ## 门禁
@@ -43,6 +44,6 @@ cd docs-site && pnpm doc && pnpm build
 
 ## 红线
 
-* 改了代码要连着改现状页；改了 `content/outputs/` 下的 mdx 要 `pnpm doc:render` 重摆，生成物跟源一起提交
+* 改了代码要连着改现状页；改了 `content/outputs/` 下的 mdx 要 `pnpm doc:render` 重新生成，生成物跟源一起提交
 * 这份 AGENTS.md 是生成物，正本是 `docs-site/content/outputs/agents.mdx`，改那边
 * 轨迹卡只增不改
