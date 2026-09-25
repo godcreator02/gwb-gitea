@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { apply, name } from '../src/index.js'
-import type { GwbContext } from '@godcreator/gwb-plugin-api'
+import type { GwbContext } from '@godcreator/gwb-kernel-desktop'
 
 /**
  * 加载与命令：替身自己写。网络部分全走替换掉的 fetch；真发请求的验证在隔离 home 的
@@ -9,7 +9,7 @@ import type { GwbContext } from '@godcreator/gwb-plugin-api'
 
 interface Harness {
   ctx: GwbContext
-  commands: Array<{ name: string; description: string; usage: string; plugin: string }>
+  commands: Array<{ name: string; description: string; usage: string; plugin?: string }>
   handlers: Map<string, (args?: unknown) => Promise<unknown>>
   defines: Array<{ key: string; type: string }>
   skillDirs: Array<string>
@@ -74,7 +74,7 @@ describe('gwb-gitea', () => {
     expect(h.defines.map((d) => d.key).sort()).toEqual(['base-url', 'token'])
     expect(h.defines.find((d) => d.key === 'token')?.type).toBe('secret')
     expect([...h.handlers.keys()]).toEqual(['gitea.http'])
-    for (const cmd of h.commands) expect(cmd.plugin).toBe('@godcreator/gwb-gitea')
+    for (const cmd of h.commands) expect(cmd.plugin).toBeUndefined()
     expect(h.commands[0]?.description.trim()).not.toBe('')
     expect(h.commands[0]?.usage).toContain('method')
     expect(h.skillDirs).toHaveLength(1)

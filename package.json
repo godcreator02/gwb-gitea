@@ -1,42 +1,11 @@
 {
-  "name": "@godcreator/gwb-gitea",
-  "version": "0.1.4",
-  "author": {"name": "godcreator"},
-  "description": "gitea HTTP 插件：一条 gitea.http 命令把 agent 组装好的 API 调用发往配置的 gitea 实例，补上 /api/v1、注入 token、整理回执；配方与读法写在随包发布的说明书里。",
+  "name": "gwb-gitea-workspace",
+  "private": true,
   "type": "module",
-  "exports": {
-    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
-    "./package.json": "./package.json"
-  },
-  "files": ["dist", "src", "skills"],
+  "description": "gitea 插件的 pnpm workspace：插件放在 plugins/（装进 home、由 cordis 加载的包）。文档站 docs-site/ 自己一套依赖，不进 workspace。",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "oxlint . --deny-warnings",
-    "test": "vitest run --passWithNoTests --tags-filter=!slow",
-    "test:all": "vitest run --passWithNoTests",
-    "check": "pnpm run typecheck && pnpm run lint && pnpm run test",
-    "prepublishOnly": "pnpm build"
+    "build": "pnpm -r --filter \"./plugins/*\" build",
+    "check": "pnpm -r --no-bail check"
   },
-  "engines": { "node": ">=24" },
-  "peerDependencies": {
-    "@godcreator/gwb-kernel-desktop": "^0.4.1"
-  },
-  "devDependencies": {
-    "@godcreator/gwb-commands": "^0.4.6",
-    "@godcreator/gwb-plugin-api": "^0.4.1",
-    "@godcreator/gwb-settings": "^0.3.2",
-    "@godcreator/gwb-skills": "^0.4.4",
-    "@types/node": "^24.0.0",
-    "cordis": "4.0.0-rc.10",
-    "oxlint": "1.76.0",
-    "oxlint-tsgolint": "7.0.2001",
-    "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://git.tianshen02.online:28377/godcreator/gwb-gitea.git"
-  },
-  "keywords": ["gwb", "gwb-plugin"]
+  "engines": { "node": ">=24" }
 }
