@@ -1,33 +1,67 @@
 ---
-title: gitea 的手
-description: 这个仓是什么、一次调用怎么走、从哪一页开始读
+title: gwb-gitea
+description: 工作台里调 gitea REST API 的插件：一条 gitea.http 命令、两项设置、一份说明书；它连着什么、提供什么、不做什么
 ---
 
-# gitea 的手
+**本页回答**：`@godcreator/gwb-gitea` 做什么、对外提供哪些接口、依赖谁、刻意不做什么，以及从哪一页接着读。
 
-**本页回答**：`gwb-gitea` 是什么、一次调用怎么走、从哪一页开始读。
+## 做什么
 
-怎么走到今天去 [轨迹](/trajectory)，还没发生的事在 [未来](/future)。
-
-## 是什么
-
-gwb 工作台里调 gitea API 的插件，只有一条命令 `gitea.http`：agent 组装好一条 gitea API 调用，插件把它发往
-设置里配的那个 gitea 实例。建仓、发 release、传产物这些用法全写在随包发布的说明书 `gitea` 里，代码只负责
-把请求原样发出去，不另设建仓命令、发版命令。
+agent 按 gitea 的 API 文档拼好一次调用（method、path、query、body，或者一个要上传的本机文件），交给命令
+`gitea.http`；插件补上 `/api/v1` 前缀、带上设置里的 token、发往设置里的 gitea 实例，再把 gitea 的回应整理成
+`{ status, truncated, note?, body }` 交回。建仓、发 release、传产物这些具体做法写在随包发布的说明书 `gitea` 里，
+插件只有这一条命令：新的用法写进说明书，不加新命令。
 
 {/* ref file="../plugins/gitea/src/index.ts" lines="118-119" hash="d948d7fec90d" blob="31c63e1ff1d8" */}
 
-## 一次调用怎么走
+## 它连着什么
 
-`src/core.ts` 的 `parseArgs` 先收窄参数，`buildUrl` 补上 `/api/v1` 前缀与 query；`src/index.ts` 的 handler
-取设置里的 token 放进 `Authorization`，有 `file` 参数就按 multipart 上传，发出请求后交给 `shapeResponse`
-整理成 `{ status, truncated, body }`。2xx、4xx、5xx 都算发出去了，由调用方解释；只有请求没发出去才回
-`ok: false`，报错里的 token 经 `redact` 脱敏。
+插件只有 node 侧、没有界面。下面这张图把它和外面连着的东西切开，每条跨过插件边界的线是一条接缝：
 
-## 按来意怎么读
+<GiteaSeams />
 
-| 来意 | 先读 |
+1. **命令总线 → 处理函数**。agent 经 MCP 入口的 `run` 调 `gitea.http`，命令总线把参数原样交给插件登记的处理函数。
+   参数形状、回执字段由本插件定；命令总线只要求登记时 `name`、`description`、`usage` 都不为空。
+2. **设置 → 地址与 token**。插件声明 `base-url`（字符串）与 `token`（secret 型）两项，每次调用现读，改了设置下一次调用就生效。
+   分区名 `gitea` 由设置插件按条目 id 算出，值存在哪、secret 怎么显示都归设置插件管。
+3. **说明书插件 → skills/ 目录**。插件只交出 `skills/` 目录的地址，收集和按名字读由说明书插件负责。
+4. **处理函数 → gitea 实例**。插件用 node 自带的 `fetch` 调 `<base-url>/api/v1/<path>`，状态码的含义由 gitea 定、插件不解释：
+   2xx、4xx、5xx 都照样交回，只有请求根本没发出去才回 `ok: false`。
+5. **处理函数 → 本机文件**。参数里带 `file` 时，插件从磁盘读 `file.path` 放进 multipart 表单。读不到和网络不通一样回 `ok: false`。
+
+每一步怎么做、为什么这样做，见[一次调用从参数到回执](/docs/request)。
+
+## 接口
+
+| 类别 | 名字 | 要点 |
+| --- | --- | --- |
+| 命令 | `gitea.http` | 参数 `{ method, path, query?, body?, file? }`，回执 `{ status, truncated, note?, body }`；完整用法在命令的 `usage` 里（MCP 入口的 `search` 能看到） |
+| 设置 | `gitea.base-url` | gitea 实例的地址，不带路径；没写协议的按 https |
+| 设置 | `gitea.token` | secret 型，gitea 网页上生成的 API token |
+| 说明书 | `gitea` | 怎么配 token、常用调用的写法、状态码怎么读 |
+
+{/* has file="../plugins/gitea/src/core.ts" text="export const BASE_URL_KEY = 'base-url'" */}
+{/* has file="../plugins/gitea/src/core.ts" text="export const TOKEN_KEY = 'token'" */}
+
+## 依赖
+
+插件依赖工作台里的三个插件：命令总线（登记 `gitea.http`，缺了插件不加载）、设置（读地址与 token，缺了插件不加载）、
+说明书插件（登记说明书，缺了命令照常可用，只是 `skill.list` 里没有 `gitea`）。另外依赖内核包的类型定义。
+peer 怎么写、每个服务从哪取，见[插件之间怎么连](/docs/wiring)。
+
+## 不做的事
+
+- **不做专用命令**：建仓、发版、列包都是说明书里的一次 `gitea.http` 调用，不写成独立命令。理由见轨迹卡[gwb-gitea](/trajectory/2026-09-15-gwb-gitea)
+- **不解释状态码**：401、404、409 各意味着什么由调用方判断，说明书里有读法
+- **不自动翻页**：回执超过 64KB 就截断并带 `note`，要调用方用 `page` / `limit` 分页重取
+- **脱敏只管报错**：请求没发出去时，报错文字里出现的 token 换成 `***`；gitea 正常返回的 `body` 原样交回，不做替换
+- **不要求先配地址**：`base-url` 没设置时用团队的 gitea 实例，不会报「没配地址」
+
+## 接着读
+
+| 想做什么 | 读哪页 |
 | --- | --- |
-| 要改依赖、设置项或说明书的登记 | [依赖的服务与说明书](/docs/plugin) |
-| 要改参数收窄、URL 组装、回执整理 | [系统地图](/docs/system-map) |
+| 改参数检查、URL 拼接、回执整理 | [一次调用从参数到回执](/docs/request) |
+| 改注入、peer 或说明书的登记 | [插件之间怎么连](/docs/wiring) |
 | 想知道为什么是现在这样 | [轨迹](/trajectory) |
+| 还没处理的反馈 | [未来](/future/overview) |

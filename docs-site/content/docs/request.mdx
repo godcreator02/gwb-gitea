@@ -1,0 +1,84 @@
+---
+title: 一次调用从参数到回执
+description: gitea.http 收到参数之后依次做了什么：检查参数、拼 URL、组装请求体、发出、整理回执；每一步为什么这样做
+---
+
+**本页回答**：一次 `gitea.http` 调用在插件里经过哪几步、每一步的规则是什么、为什么这样定；代码分在哪两个文件。
+
+## 代码分在两个文件
+
+{/* tree dir="../plugins/gitea/src" depth="1" hash="037c9b5c48b9" */}
+
+`core.ts` 放不碰网络、不读磁盘、不读设置的纯函数：参数检查、URL 拼接、回执整理、脱敏，给输入看输出，测试在
+`tests/core.test.ts`。`index.ts` 登记命令与设置，处理函数在这里读设置、读文件、发请求。依赖只有一个方向：
+`index.ts` 引 `core.ts`，`core.ts` 只引 `vocab.ts` 里的 `isRecord`。
+
+{/* ref file="../plugins/gitea/src/core.ts" lines="1-1" hash="4747612b10de" blob="fc2fe60ce1ee" */}
+
+下面用同一个例子走完全程：往一个 release 上传产物。
+
+```json
+{ "method": "post", "path": "/api/v1/repos/godcreator/gwb/releases/7/assets",
+  "query": { "name": "gwb-setup.exe" }, "file": { "path": "D:\\out\\gwb-setup.exe" } }
+```
+
+## 1. 检查参数
+
+`parseArgs` 把 `unknown` 收窄成 `HttpArgs`。method 转成大写后要在六个之内（例子里的 `post` 变成 `POST`）；path 不能为空；
+query 的值只能是字符串、数字、布尔；GET、HEAD 不能带 body 或 file——node 的 `fetch` 遇到这种请求直接抛 `TypeError`，
+在这一步拦下能给出看得懂的原因；带 file 时 body 只能是对象，因为它要拆成表单字段。
+
+{/* ref file="../plugins/gitea/src/core.ts" lines="13-15" hash="3323f61f306b" blob="f6914560e039" */}
+
+检查不过的报错文字就是用法：说清哪个参数、要什么、收到了什么。agent 读报错就能改对，不必再去查 `usage`。
+
+## 2. 拼 URL
+
+path 去掉开头的斜杠，调用方多写了 `api/v1/` 也剥掉（例子里剩下 `repos/godcreator/gwb/releases/7/assets`）。
+只剥一次：剥完仍以 `api/v1/` 开头的，是调用方真的要访问这个路径。
+
+{/* ref file="../plugins/gitea/src/core.ts" lines="27-32" hash="77553e37301f" blob="f6914560e039" */}
+
+`base-url` 去掉末尾斜杠，没写协议的按 `https://` 补上，这一条沿用前身 god-gitea 只走 https 的约定。
+然后拼成 `<base-url>/api/v1/<path>`，query 用 `URLSearchParams` 编码接在后面，query 为空时不留问号。
+
+{/* ref file="../plugins/gitea/src/core.ts" lines="94-98" hash="12448936aef4" blob="f6914560e039" */}
+
+## 3. 组装请求体
+
+- 带 `file`：body 的每个字段放进表单，不是字符串的先 `JSON.stringify`；文件从磁盘读进字段 `file.field`（缺省 `attachment`），
+  文件名缺省取路径的最后一段。gitea 上传 release 附件要的就是 `attachment` 这个字段
+- 只带 `body`：序列化成 JSON，头写 `content-type: application/json`
+- 都没有：不带请求体
+
+设置里有 token 就加头 `authorization: token <token>`，没有就不加。
+
+{/* ref file="../plugins/gitea/src/index.ts" lines="39-54" hash="c6e12bbbb5de" blob="31c63e1ff1d8" */}
+
+## 4. 发出
+
+普通调用 60 秒超时，带 `file` 的 10 分钟：上传大文件时，传到一半被超时打断比传得慢更糟，所以上传给足时间。
+
+{/* ref file="../plugins/gitea/src/core.ts" lines="8-9" hash="4c49074ab753" blob="f6914560e039" */}
+
+## 5. 整理回执
+
+回应的文本超过 64KB（`BODY_LIMIT`）就截断，回执里 `truncated: true` 并带一句 `note`，提示用 query 分页重取。
+插件不替调用方翻页：要哪几页、每页多少由调用方决定。截断后的 JSON 解不开，所以截断了一律按文本交回。
+
+没截断时，满足任一条就试着按 JSON 解析：`content-type` 里有 `json`，或者去掉开头空白后第一个字符是 `{` 或 `[`。
+解析失败（半截 JSON、错误页）按文本交回。gitea 的 API 全部返回 JSON，文本这一档留给意外情况。
+
+{/* ref file="../plugins/gitea/src/core.ts" lines="111-128" hash="60c8f4834688" blob="f6914560e039" */}
+
+回执形状是 `{ ok: true, data: { status, truncated, note?, body } }`。2xx、4xx、5xx 都走这一条：请求发出去了、
+gitea 回了话，状态码怎么解释由调用方决定。
+
+## 6. 没发出去
+
+网络不通、地址错、超时、文件读不到，都在处理函数的 `catch` 里变成 `{ ok: false, error }`。报错文字带上异常的调用栈，
+先经 `redact` 把 token 的每次出现换成 `***`，再附上检查方向：网络、`gitea.base-url` 当前的值、`gitea.token`、`file.path`。
+
+{/* ref file="../plugins/gitea/src/index.ts" lines="79-85" hash="04540c1ba390" blob="31c63e1ff1d8" */}
+
+`redact` 只用在这里。gitea 正常返回的 body 原样交回，插件不在里面找 token。

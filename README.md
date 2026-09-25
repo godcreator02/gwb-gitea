@@ -1,25 +1,22 @@
-# gitea 的手
+# gwb-gitea
 
-**本页回答**：`@godcreator/gwb-gitea` 是什么、怎么装、怎么用、文档在哪。
-
-## 是什么
-
-gwb 工作台里调 gitea API 的插件：一条 `gitea.http` 命令把 agent 组装好的 gitea API 调用发往设置里的
-gitea 实例。插件补上 `/api/v1` 前缀、注入 token（secret 型设置项，回执与日志里脱敏）、把回执整理成
-`{ status, body }`（2xx、4xx、5xx 都是数据），`file` 参数走 multipart（传 release 产物）。**没有**建仓命令、
-没有发版命令：各类调用怎么组装写在随包发布的说明书 `skills/gitea/SKILL.md` 里，代码只负责把请求发出去。
+gwb 工作台里调 gitea REST API 的插件 `@godcreator/gwb-gitea`：一条 `gitea.http` 命令把 agent 拼好的 API 调用发往设置里的
+gitea 实例，补上 `/api/v1` 前缀、带上 token（secret 型设置项）、把回应整理成 `{ status, truncated, note?, body }`
+（2xx、4xx、5xx 都照样交回），带 `file` 参数时按 multipart 上传。**没有**建仓命令、发版命令：各类调用怎么写在随包发布的
+说明书 `plugins/gitea/skills/gitea/SKILL.md` 里。
 
 ## 怎么装
 
 在工作台里调 `plugin-manager.install {"pkg":"@godcreator/gwb-gitea"}`。装完经 MCP 入口的 `run` 调 `gitea.http`；
-token 怎么配见说明书（在 gitea 网页上开一个 api scope 的 token，`settings.set` 写进 `gitea.token`）。
+token 在 gitea 网页上生成（只给 api 权限），用 `settings.set {"section":"gitea","key":"token","value":"<token>"}` 写进去。
 
 ## 怎么用
 
-`gitea.http { "method": "GET", "path": "/version" }` → `{ ok, data: { status: 200, body: { version: … } } }`。
-建仓、发 release、传产物、查包的完整写法与状态码读法，读 skill「gitea」。
+`gitea.http {"method":"GET","path":"/version"}` → `{ ok: true, data: { status: 200, truncated: false, body: { version: … } } }`。
+建仓、发 release、传产物、查包的写法与状态码怎么读，读说明书 `gitea`（`skill.read {"name":"gitea"}`）。
 
-## 文档
+## 仓的结构
 
+pnpm workspace：插件包在 `plugins/gitea/`，仓根 `pnpm install`、`pnpm build`、`pnpm check`。
 `docs-site/` 是文档站：`cd docs-site && pnpm install && pnpm dev`，看 `http://localhost:4326`。
 这份 README 是生成物，正本是 `docs-site/content/docs/outputs/readme.mdx`。

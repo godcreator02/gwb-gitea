@@ -1,0 +1,23 @@
+---
+born-at: 2026-09-26T02:30
+type: choice
+parent: [2026-09-15-gwb-gitea]
+label: workspace 与插件 peer
+domain: 依赖与发版
+---
+
+## 背景
+
+devkit 0.21 起 `devkit.dev`、`devkit.release` 只认 workspace 布局（`packages` 必给，仓根不能是插件包），本仓还是仓根单包；
+同时平台跟到了内核 0.7.2、命令总线 0.5、外壳 0.14，而 peer 里的内核包还写着 `^0.4.1`，在 0.x 下不包含 0.7.2。
+devkit 的发版检查也改成要求源码里注入的服务，其提供方写在 peer 里。
+
+supersedes:: [2026-09-24-kernel-04-deps](2026-09-24-kernel-04-deps.md)
+
+## 结论与边界
+
+插件包用 `git mv` 搬进 `plugins/gitea/`，仓根改成不发布的 private 包，`pnpm-workspace.yaml` 列 `plugins/*`，插件包写团队源的
+`publishConfig.registry`。peer 写内核包 `^0.7.2` 与三个用到的插件：命令总线 `^0.5.2`、设置 `^0.3.5`（都在 `export const inject` 里）、
+说明书插件 `^0.4.7`（只在 `ctx.inject` 里局部注入，标 `optional`），不再另写 dev；词汇表包不再依赖，类型从内核包取。
+这推翻了 09-24 那张卡「命令总线、设置、说明书写 dev」的结论。命令登记按命令总线 0.5 的写法去掉了 `plugin` 字段和外层 `ctx.effect`。
+提交 `6b030ed`；版本号没升，隔离 home 里的验证与发版由主会话统一做。

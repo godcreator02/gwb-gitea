@@ -8,6 +8,16 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* 接缝图（src/components/gitea-seams.tsx）选中时的强调色 */
+:root {
+  --gitea-seam-accent: #c2410c;
+  --gitea-seam-accent-soft: color-mix(in srgb, #c2410c 12%, transparent);
+}
+.dark {
+  --gitea-seam-accent: #fb923c;
+  --gitea-seam-accent-soft: color-mix(in srgb, #fb923c 16%, transparent);
+}
+
 .note {
   border: 1px solid rgba(86, 182, 232, 0.4);
   border-left: 3px solid rgba(86, 182, 232, 0.7);

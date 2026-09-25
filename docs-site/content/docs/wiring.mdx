@@ -1,0 +1,51 @@
+---
+title: 插件之间怎么连
+description: gwb-gitea 提供的命令、设置项与说明书，注入的三个服务与 peer 写法，以及它对外直接访问的网络与文件
+---
+
+**本页回答**：本仓插件提供哪些命令、设置项与说明书；注入了哪些服务、是必需还是局部注入、peer 怎么写；按名字调用了别的插件的哪些命令、用了哪些约定通道。
+
+## @godcreator/gwb-gitea
+
+### 提供
+
+| 类别 | 名字 | 说明 |
+| --- | --- | --- |
+| 命令 | `gitea.http` | 把一次 gitea API 调用发往设置里的实例，参数与回执见[一次调用从参数到回执](/docs/request) |
+| 设置项 | `gitea.base-url` | 字符串，gitea 实例地址 |
+| 设置项 | `gitea.token` | secret 型，gitea 的 API token |
+| 说明书 | `gitea` | `skills/gitea/SKILL.md`，随包发布 |
+
+{/* has file="../plugins/gitea/src/index.ts" text="name: 'gitea.http'," */}
+{/* has file="../plugins/gitea/src/index.ts" text="key: BASE_URL_KEY," */}
+{/* has file="../plugins/gitea/src/index.ts" text="key: TOKEN_KEY," */}
+{/* tree dir="../plugins/gitea/skills" depth="2" hash="5c4b8f4235ed" */}
+
+### 注入
+
+| 服务 | 提供方包 | 必需 / 局部注入 | peer 写法 | 用来做什么 | 缺了会怎样 |
+| --- | --- | --- | --- | --- | --- |
+| `gwbCommands` | `@godcreator/gwb-commands` | 必需（`export const inject`） | `^0.5.2` | 登记 `gitea.http` | 插件不加载 |
+| `gwbSettings` | `@godcreator/gwb-settings` | 必需（`export const inject`） | `^0.3.5` | 声明两项设置，每次调用读值 | 插件不加载 |
+| `gwbSkills` | `@godcreator/gwb-skills` | 局部注入（`ctx.inject`） | `^0.4.7`，标 `optional` | 登记 `skills/` 目录 | 命令照常可用，`skill.list` 里没有 `gitea` |
+
+内核包 `@godcreator/gwb-kernel-desktop` 也写在 peer（`^0.7.2`），只取 `GwbContext` 这类类型；插件不用 `gwbKernel`。
+这几个包都只 `import type`，编译后整句消失，产物里按包名 import 的只有 node 内置模块。
+
+{/* has file="../plugins/gitea/src/index.ts" text="export const inject = ['gwbCommands', 'gwbSettings']" */}
+{/* has file="../plugins/gitea/src/index.ts" text="ctx.inject(['gwbSkills']" */}
+{/* ref file="../plugins/gitea/package.json" lines="24-32" hash="5dd93dfc3b3d" blob="78b7386668da" */}
+
+说明书目录的地址按产物位置算：`dist/index.js` 的上一级就是 `skills/`，不写死磁盘路径。说明书插件只扫这个目录下的子目录，
+所以一份说明书一个子目录（`skills/gitea/SKILL.md`），直接放在 `skills/` 下的 `SKILL.md` 会被跳过、也不报错。
+
+{/* ref file="../plugins/gitea/src/index.ts" lines="25-26" hash="4373e99e56de" blob="31c63e1ff1d8" */}
+
+### 按名字调用与约定通道
+
+| 通道 | 对方 | 名字 | 用来做什么 |
+| --- | --- | --- | --- |
+| 网络 | gitea 实例 | `<base-url>/api/v1/…` | 发出 `gitea.http` 的调用 |
+| 文件 | 本机磁盘 | 参数里的 `file.path` | 读要上传的文件 |
+
+不按名字调用别的插件的命令。

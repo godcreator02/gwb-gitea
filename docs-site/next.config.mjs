@@ -5,6 +5,8 @@ const withMDX = createMDX()
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
+  // next dev 缺省会往站目录写 AGENTS.md / CLAUDE.md；本仓的这两份是 docfirst 生成到仓根的，站目录不要
+  agentRules: false,
   /**
    * 故意留空：`@godcreator/docfirst-workflow` 与 `@godcreator/docfirst-trajectory` 都不能放进
    * `serverExternalPackages`。两个包里都有客户端组件（前者 `/fumadocs/pre` 的状态点，后者 `./react` 的星轨盘），

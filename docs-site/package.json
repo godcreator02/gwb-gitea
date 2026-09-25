@@ -5,9 +5,9 @@
   "type": "module",
   "description": "gitea 插件的文档站：现状钉在这个仓的源码上，README / AGENTS / CLAUDE 由 docfirst render 生成",
   "scripts": {
-    "dev": "next dev -p 4326",
+    "dev": "next dev -p 4326 -H 127.0.0.1",
     "build": "next build",
-    "start": "next start -p 4326",
+    "start": "next start -p 4326 -H 127.0.0.1",
     "docfirst": "docfirst",
     "doc": "docfirst check",
     "doc:confirm": "docfirst confirm",
