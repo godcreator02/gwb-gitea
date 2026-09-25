@@ -7,7 +7,7 @@ description: 拆成哪几块、各在哪、依赖方向是什么、先读哪块
 
 **本页回答**：`gwb-gitea` 拆成哪几块、各在哪、块与块之间谁依赖谁、新来的人先读哪块。
 
-{/* tree dir="../src" depth="1" */}
+{/* tree dir="../plugins/gitea/src" depth="1" hash="037c9b5c48b9" */}
 
 | 模块 | 在哪 | 管什么 | 先读 |
 | --- | --- | --- | --- |
@@ -19,6 +19,6 @@ description: 拆成哪几块、各在哪、依赖方向是什么、先读哪块
 
 `index.ts` 引 `core.ts`，`core.ts` 只引 `vocab.ts`，反过来不引：
 
-{/* ref file="../src/core.ts" lines="1-1" */}
+{/* ref file="../plugins/gitea/src/core.ts" lines="1-1" hash="4747612b10de" blob="fc2fe60ce1ee" */}
 
 所以 `core.ts` 不启动工作台也能测，真发请求只发生在 `index.ts` 的 handler 里。

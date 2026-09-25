@@ -7,7 +7,7 @@ description: 这个仓是什么、一次调用怎么走、从哪一页开始读
 
 **本页回答**：`gwb-gitea` 是什么、一次调用怎么走、从哪一页开始读。
 
-怎么走到今天去 [轨迹](/trajectory)，在途的活在 [交接](/spec)。
+怎么走到今天去 [轨迹](/trajectory)，还没发生的事在 [未来](/future)。
 
 ## 是什么
 
@@ -15,7 +15,7 @@ gwb 工作台里调 gitea API 的插件，只有一条命令 `gitea.http`：agen
 设置里配的那个 gitea 实例。建仓、发 release、传产物这些用法全写在随包发布的说明书 `gitea` 里，代码只负责
 把请求原样发出去，不另设建仓命令、发版命令。
 
-{/* ref file="../src/index.ts" lines="75-76" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="70-71" hash="d948d7fec90d" blob="1b44a8928b95" */}
 
 ## 一次调用怎么走
 

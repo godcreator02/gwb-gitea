@@ -1,43 +1,42 @@
 # gwb-gitea
 
-**本页回答**：在这个仓干活的 agent 先看什么、怎么跑、门禁是哪几条、什么碰不得。
+**本页回答**：在这个仓干活的 agent 先看什么、怎么运行、提交前要过哪些检查、什么不能做。
 
-通用纪律（TDD、模块经接口连接、盘问、六区规则、文档怎么写）不在这儿——正本是随
-`@godcreator/gwb-docfirst-workflow` 插件发布的 skill「docfirst-docs」，读它。这一页只写仓专属的，
-压在 60 行内。
+文档怎么写、分区、钉码怎么确认，读随 `@godcreator/gwb-docfirst-workflow` 插件发布的说明书「docfirst-docs」；
+写插件、在隔离 home 里验证读「gwb-devkit」；升版本号、发版读「gwb-release」。这一页只写本仓专属的。
 
 ## 先读
 
 `docs-site/content/docs/`：[系统地图](docs-site/content/docs/system-map.mdx) → 要改的那块的页。
-在途的活与初版设计 spec（`gitea-spec.mdx`）都在 `docs-site/content/spec/`。写插件、在隔离 home 里验证读
-skill「gwb-devkit」，升版本号、发版读 skill「gwb-release」。
 
 ## 这个仓的形状
 
-只有 node 侧的插件，**一条命令** `gitea.http`：各类调用怎么组装、回执怎么读、token 怎么配，全写在
-`skills/gitea/SKILL.md`、随包发布，代码只负责把请求发出去。纯逻辑在 `src/core.ts`（参数收窄、URL 组装、
-回执整理、脱敏），测试在 `tests/`；真发请求只发生在 `src/index.ts` 的 handler 里。
+pnpm workspace：仓根是不发布的 private 包，插件 `@godcreator/gwb-gitea` 在 `plugins/gitea/`，文档站在 `docs-site/`
+（自己一套依赖，不进 workspace）。插件只有 node 侧，**一条命令** `gitea.http`：各类调用怎么组装、回执怎么读、
+token 怎么配，全写在 `plugins/gitea/skills/gitea/SKILL.md`、随包发布，代码只负责把请求发出去。
+纯逻辑在 `plugins/gitea/src/core.ts`，测试在 `plugins/gitea/tests/`；真发请求只发生在 `plugins/gitea/src/index.ts` 的处理函数里。
 
-## 怎么跑
+## 怎么运行
 
 ```bash
 pnpm install
-pnpm check        # typecheck + oxlint + vitest
-pnpm build        # tsc 输出到 dist/
+pnpm build        # 递归构建 plugins/*：tsc 输出到 plugins/gitea/dist/
+pnpm check        # 递归检查：typecheck + oxlint + vitest
 ```
 
-在隔离 home 里验证时，真调用用 `gitea.http GET /version`（不用 token）。
+在隔离 home 里验证：`devkit.dev {"home":"<home 名>","dir":"<仓根>","packages":["plugins/gitea"]}`，
+真调用用 `gitea.http GET /version`（不用 token）。
 
-## 门禁
-
-提交前都要绿：
+## 提交前的检查
 
 ```bash
 pnpm check
-cd docs-site && pnpm doc && pnpm build
+cd docs-site && pnpm doc
 ```
 
-## 红线
+改了被钉的代码，同一个提交里 `pnpm doc:confirm` 写回挪了位置的钉码，剩下的黄灯复核后 `pnpm doc:confirm <页…> --accept`。
 
-* 别往 `src/index.ts` 里加「建仓命令」「发版命令」：那等于把用法写死在代码里，新的调用写法写进说明书
-* 这份 AGENTS.md 是生成物，正本是 `docs-site/content/outputs/agents.mdx`，改那边
+## 不能做的
+
+- 别往 `plugins/gitea/src/index.ts` 里加「建仓命令」「发版命令」：那等于把用法写死在代码里，新的调用写法写进说明书
+- 这份 AGENTS.md 是生成物，正本是 `docs-site/content/docs/outputs/agents.mdx`，改那边再 `pnpm doc:render`

@@ -17,18 +17,18 @@ description: 这个插件用到工作台的哪几个服务、缺了哪个就不�
 
 两个硬依赖写在一行上：
 
-{/* ref file="../src/index.ts" lines="31-31" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="28-28" hash="64c548c04fe0" blob="1b44a8928b95" */}
 
 `gwbSkills` 走局部注入，在子 fiber 里登记说明书目录：
 
-{/* ref file="../src/index.ts" lines="52-52" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="49-49" hash="322e1eafbdfe" blob="1b44a8928b95" */}
 
-`package.json` 的 `peerDependencies` 只有内核包 `@godcreator/gwb-kernel-desktop`，范围是验证时那个内核的 `^x.y.z`。上面三个插件与词汇表包 `@godcreator/gwb-plugin-api` 只取类型，写在 dev，编译后整句消失；`isRecord` 这类无状态小函数由插件自带（`src/vocab.ts`）。
+`plugins/gitea/package.json` 的 `peerDependencies` 写内核包 `@godcreator/gwb-kernel-desktop`（范围是验证时那个内核的 `^x.y.z`）与上面三个插件；说明书插件只在局部注入里用，在 `peerDependenciesMeta` 标 `optional`。它们都只 `import type`，编译后整句消失；`isRecord` 这类无状态小函数由插件自带（`src/vocab.ts`）。
 
 ## 说明书怎么随包发布
 
 一份说明书一个子目录——说明书插件 `gwb-skills` 的收集器只扫 `skills/` 下的子目录，平铺的 `SKILL.md`
 会被不报错地跳过。目录位置从产物位置反推（`dist/index.js` 的上一级就是 `skills/`），不写死盘上路径：
 
-{/* ref file="../src/index.ts" lines="33-34" */}
-{/* tree dir="../skills" depth="2" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="30-31" hash="2d43ced4aaa2" blob="1b44a8928b95" */}
+{/* tree dir="../plugins/gitea/skills" depth="2" hash="5c4b8f4235ed" */}

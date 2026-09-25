@@ -1,3 +1,0 @@
-{
-  "pages": ["inbox", "hatch", "..."]
-}

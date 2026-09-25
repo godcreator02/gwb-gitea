@@ -6,22 +6,19 @@ const withMDX = createMDX()
 const config = {
   reactStrictMode: true,
   /**
-   * **这一行空着，本身就是那条「不许打包」的账。**
-   *
-   * `@godcreator/docfirst-workflow` 与 `@godcreator/docfirst-trajectory` 都**不许**放进
-   * `serverExternalPackages`：两个包里都有客户端组件（前者的 `/fumadocs/pre` 是状态点，
-   * 后者的 `./react` 是星轨盘），外置之后 Next 走 Node 单独加载它们、跟站打包的 React
-   * 分了家，预渲染报 `Cannot read properties of null (reading 'use')`，报错完全不指根因。
-   * trajectory 还多一层：它的 `./server` 用**包名自引用**去渲 `./react`，一外置连那句
-   * `"use client"` 都发现不了，`StarDisk` 被当服务端组件渲染，一命中 hooks 就炸。
-   *
-   * 两条是同一类：**外置的边界会把客户端指令吃掉**。它们的服务端那半（remark 插件、
-   * 读盘调 git 的那些）走 fumadocs-mdx 的 loader，本来就是 Node 直载、不经打包器。
+   * 故意留空：`@godcreator/docfirst-workflow` 与 `@godcreator/docfirst-trajectory` 都不能放进
+   * `serverExternalPackages`。两个包里都有客户端组件（前者 `/fumadocs/pre` 的状态点，后者 `./react` 的星轨盘），
+   * 外置之后 Next 用 Node 单独加载它们、和站打包的 React 不是同一份，预渲染报
+   * `Cannot read properties of null (reading 'use')`，报错里看不出原因。trajectory 的 `./server` 还用包名引用
+   * 自己的 `./react`，外置后 `"use client"` 指令被忽略，`StarDisk` 被当成服务端组件渲染，一用到 hooks 就报错。
+   * 它们服务端的部分（remark 插件、读磁盘调 git 的代码）经 fumadocs-mdx 的 loader 由 Node 直接加载，不经打包器。
    */
   serverExternalPackages: [],
-  // 站根落到文档首页
   redirects: async () => [
     { source: '/', destination: '/docs', permanent: true },
+    // 生成正本挪进了现状区，在途 spec 挪进了未来区
+    { source: '/outputs/:path*', destination: '/docs/outputs/:path*', permanent: false },
+    { source: '/spec/:path*', destination: '/future/spec/:path*', permanent: false },
   ],
 }
 

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "gitea 的手 的六区文档站：现状钉在这个仓的真实源码上，README / AGENTS 由 render 摆出",
+  "description": "gitea 插件的文档站：现状钉在这个仓的源码上，README / AGENTS / CLAUDE 由 docfirst render 生成",
   "scripts": {
     "dev": "next dev -p 4326",
     "build": "next build",
@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@godcreator/docfirst-trajectory": "0.1.1",
-    "@godcreator/docfirst-workflow": "0.2.4",
+    "@godcreator/docfirst-workflow": "0.3.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/mdx": "^2.0.14",
     "@types/node": "^26.2.0",
