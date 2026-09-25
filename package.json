@@ -16,15 +16,12 @@
     "test": "vitest run --passWithNoTests --tags-filter=!slow",
     "test:all": "vitest run --passWithNoTests",
     "check": "pnpm run typecheck && pnpm run lint && pnpm run test",
-    "//prepublishOnly": "发版前强制构建一次。pnpm check 不构建，少了这条会把上一版的 dist/ 原样发出去，而且不报错",
     "prepublishOnly": "pnpm build"
   },
   "engines": { "node": ">=24" },
-  "//peerDependencies": "内核包的 ^ 范围就是这个插件兼容哪个内核。node 侧构建产物没有按值 import cordis（只 import type），所以 peer 里没有 cordis。规矩见 devkit 文档站「依赖怎么写」与「兼容哪个内核」",
   "peerDependencies": {
     "@godcreator/gwb-kernel-desktop": "^0.4.1"
   },
-  "//devDependencies": "命令总线、设置、说明书三个插件与词汇表包只取类型，运行时经 inject 使用（gwbSkills 是局部注入）；cordis 只给本地构建与类型检查",
   "devDependencies": {
     "@godcreator/gwb-commands": "^0.4.6",
     "@godcreator/gwb-plugin-api": "^0.4.1",
