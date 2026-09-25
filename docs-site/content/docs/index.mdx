@@ -1,37 +1,33 @@
 ---
 title: gitea 的手
-description: 这个仓是什么、解决什么问题、从哪儿开始读——论断引用仓里的真实源码
+description: 这个仓是什么、一次调用怎么走、从哪一页开始读
 ---
 
 # gitea 的手
 
-**本页回答**：`gwb-gitea` 是什么、解决什么问题、从哪一页开始读。
+**本页回答**：`gwb-gitea` 是什么、一次调用怎么走、从哪一页开始读。
 
-这一区只写**现状**：设计、原理、边界、接口——散文，不写历史，不写计划。为什么变成这样去
-[轨迹](/trajectory)，往哪儿去看 [未来](/future/overview)，正在做的活在 [交接](/spec)。
-写法的判据见随 `@godcreator/gwb-docfirst-workflow` 插件发布的 skill「docfirst-docs」，这儿只留一句：
-**一句话如果能被代码推翻，它就该带引用；一句话如果只是在复述代码，它就不该存在。**
+怎么走到今天去 [轨迹](/trajectory)，在途的活在 [交接](/spec)。
 
-## 第一条引用
+## 是什么
 
-下面这块不是抄进文档的副本，是构建那一刻从源码取的：
+gwb 工作台里调 gitea API 的插件，只有一条命令 `gitea.http`：agent 组装好一条 gitea API 调用，插件把它发往
+设置里配的那个 gitea 实例。建仓、发 release、传产物这些用法全写在随包发布的说明书 `gitea` 里，代码只负责
+把请求原样发出去，不另设建仓命令、发版命令。
 
-{/* ref file="../src/index.ts" lines="10-10" */}
+@@docfirst ref ../src/index.ts:75-76 @@
 
-被引用的代码变了，`pnpm doc` 会把这条引用标黄，等人复核论断还成不成立。
+## 一次调用怎么走
 
-<Note>
-  这一段在站上是提示框，在机读版里是引用块。压平规则在格式包的默认表里，站只提供画框的组件。
-  自己加组件要**两头都登记**：React 组件放进 `src/components/`，压平规则写进 `docfirst.config.mjs`，
-  `pnpm verify:roster` 检查两头是否一致。
-</Note>
+`src/core.ts` 的 `parseArgs` 先收窄参数，`buildUrl` 补上 `/api/v1` 前缀与 query；`src/index.ts` 的 handler
+取设置里的 token 放进 `Authorization`，有 `file` 参数就按 multipart 上传，发出请求后交给 `shapeResponse`
+整理成 `{ status, truncated, body }`。2xx、4xx、5xx 都算发出去了，由调用方解释；只有请求没发出去才回
+`ok: false`，报错里的 token 经 `redact` 脱敏。
 
-## 这一区怎么长
+## 按来意怎么读
 
-[系统地图](/docs/system-map) 是总索引：拆成哪几块、各在哪、依赖方向、先读哪块。每块一页，
-页里是固定块（管什么 / 不知道什么 / 数据结构 / 提供的接口 / 依赖的接口 / 怎么单独测 / 代码地图），
-接口与边界逐条引用代码。[术语表](/docs/glossary) 收这个仓里的词；这个插件用到工作台的哪几个服务、
-缺了哪个就不加载、依赖怎么写，在[依赖的服务与说明书](/docs/plugin)。
-
-只写「错了难改」的：边界约束、依赖方向、接口契约、状态机、取舍。实现者剩下的自由度里
-做任何选择都不违背这一区，就够了。
+| 来意 | 先读 |
+| --- | --- |
+| 要改依赖、设置项或说明书的登记 | [依赖的服务与说明书](/docs/plugin) |
+| 要改参数收窄、URL 组装、回执整理 | [系统地图](/docs/system-map) |
+| 想知道为什么是现在这样 | [轨迹](/trajectory) |

@@ -13,19 +13,15 @@ description: 仓根 AGENTS.md 的正本——render 生成到仓根，只写仓�
 
 ## 先读
 
-`docs-site/content/docs/`：[系统地图](docs-site/content/docs/system-map.mdx) → 要改的那块的页 →
-[术语表](docs-site/content/docs/glossary.mdx)。在途的活与初版设计 spec（`gitea-spec.mdx`）都在
-`docs-site/content/spec/`。
+`docs-site/content/docs/`：[系统地图](docs-site/content/docs/system-map.mdx) → 要改的那块的页。
+在途的活与初版设计 spec（`gitea-spec.mdx`）都在 `docs-site/content/spec/`。写插件、在隔离 home 里验证读
+skill「gwb-devkit」，升版本号、发版读 skill「gwb-release」。
 
 ## 这个仓的形状
 
-只有 node 侧的插件，**一条命令** `gitea.http`：语义（配方、读法、token 用法）全写在
-`skills/gitea/SKILL.md`、随包发布，代码只做管道——**别往 index.ts 里加「建仓命令」「发版命令」**，
-那等于把语义写死在代码里；新配方写进说明书。纯逻辑在 `src/core.ts`（参数收窄、URL 组装、
-回执整形、脱敏），测试在 `tests/`；真发请求只发生在 `src/index.ts` 的 handler 里。
-`isRecord` 由插件自带（`src/vocab.ts`），词汇表包只 `import type`。依赖写法：peer 只写内核包
-`@godcreator/gwb-kernel-desktop`，别的 `@godcreator` 包与 cordis 都在 dev；构建产物里的包名
-import 只能是 node 内置模块、electron、cordis。写插件的其余规矩读 skill「gwb-devkit」。
+只有 node 侧的插件，**一条命令** `gitea.http`：各类调用怎么组装、回执怎么读、token 怎么配，全写在
+`skills/gitea/SKILL.md`、随包发布，代码只负责把请求发出去。纯逻辑在 `src/core.ts`（参数收窄、URL 组装、
+回执整理、脱敏），测试在 `tests/`；真发请求只发生在 `src/index.ts` 的 handler 里。
 
 ## 怎么跑
 
@@ -35,8 +31,7 @@ pnpm check        # typecheck + oxlint + vitest
 pnpm build        # tsc 输出到 dist/
 ```
 
-在隔离 home 里验证改动：`devkit.dev { "home": "<隔离 home>", "dir": "<本仓>" }`；真调用用
-`gitea.http GET /version`（免 token）。
+在隔离 home 里验证时，真调用用 `gitea.http GET /version`（不用 token）。
 
 ## 门禁
 
@@ -49,6 +44,5 @@ cd docs-site && pnpm doc && pnpm build
 
 ## 红线
 
-- 改了代码要连着改现状页；改了 `content/outputs/` 下的 mdx 要 `pnpm doc:render` 重新生成，生成物跟源一起提交
+- 别往 `src/index.ts` 里加「建仓命令」「发版命令」：那等于把用法写死在代码里，新的调用写法写进说明书
 - 这份 AGENTS.md 是生成物，正本是 `docs-site/content/outputs/agents.mdx`，改那边
-- 轨迹卡只增不改
