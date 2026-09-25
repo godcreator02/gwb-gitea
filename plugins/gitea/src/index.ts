@@ -15,23 +15,74 @@ import {
   parseArgs,
   redact,
   shapeResponse,
+  type HttpArgs,
 } from './core.js'
 
-/**
- * gitea HTTP 插件（只有 node 侧）：一条 `gitea.http` 命令——把 agent 组装好的 gitea API 调用发出去。
- * 语义（配方、读法、token 用法）全在随包发的 skills/gitea/SKILL.md，代码只做管道。
- * 两项设置（base-url、token）住 gwbSettings，token 是 secret 型不随包发。
- */
 export const name = 'gwb-gitea'
 
-/** 缺哪个都不加载——inject 是 cordis 的等待机制，不是建议 */
 export const inject = ['gwbCommands', 'gwbSettings']
 
-/** 说明书随包发，从产物位置反推：dist/index.js 的上一级就是 skills/ */
+/** 产物在 dist/index.js，说明书目录是它上一级的 skills/；gwbSkills 只扫这个目录的子目录，平铺的 SKILL.md 不报错地被跳过 */
 const SKILLS_DIR = new URL('../skills/', import.meta.url)
 
-function asString(value: unknown): string {
+type PluginLogger = ReturnType<GwbContext['logger']>
+
+interface OutgoingPayload {
+  headers: Record<string, string>
+  payload: FormData | string | undefined
+}
+
+function stringOrEmpty(value: unknown): string {
   return typeof value === 'string' ? value : ''
+}
+
+function buildMultipartForm(formFields: unknown, file: NonNullable<HttpArgs['file']>): FormData {
+  const form = new FormData()
+  if (formFields !== undefined) {
+    for (const [fieldName, fieldValue] of Object.entries(formFields as Record<string, unknown>)) {
+      form.append(fieldName, typeof fieldValue === 'string' ? fieldValue : JSON.stringify(fieldValue))
+    }
+  }
+  form.append(file.field ?? 'attachment', new Blob([fs.readFileSync(file.path)]), file.name ?? path.basename(file.path))
+  return form
+}
+
+function buildOutgoingPayload(request: HttpArgs): OutgoingPayload {
+  if (request.file !== undefined) return { headers: {}, payload: buildMultipartForm(request.body, request.file) }
+  if (request.body !== undefined) return { headers: { 'content-type': 'application/json' }, payload: JSON.stringify(request.body) }
+  return { headers: {}, payload: undefined }
+}
+
+function describeTruncation(truncated: boolean): { note?: string } {
+  return truncated ? { note: 'body 超过 64KB 被截断——用 query 收窄（分页 page/limit）再取' } : {}
+}
+
+async function sendToGitea(request: HttpArgs, baseUrl: string, token: string, log: PluginLogger) {
+  const url = buildUrl(baseUrl, request.path, request.query)
+  const isFileUpload = request.file !== undefined
+  try {
+    const { headers, payload } = buildOutgoingPayload(request)
+    if (token !== '') headers.authorization = `token ${token}`
+
+    const response = await fetch(url, {
+      method: request.method,
+      headers,
+      body: payload,
+      signal: AbortSignal.timeout(isFileUpload ? FILE_TIMEOUT_MS : DEFAULT_TIMEOUT_MS),
+    })
+    const shaped = shapeResponse(await response.text(), response.headers.get('content-type'))
+    log.info(`${request.method} ${request.path} → ${response.status}${shaped.truncated ? '（body 截断）' : ''}`)
+    return {
+      ok: true as const,
+      data: { status: response.status, truncated: shaped.truncated, ...describeTruncation(shaped.truncated), body: shaped.body },
+    }
+  } catch (err) {
+    const redactedMessage = redact(err instanceof Error ? (err.stack ?? err.message) : String(err), token)
+    return {
+      ok: false as const,
+      error: `没发出去：${redactedMessage}——网络通不通？gitea.base-url（现为 ${baseUrl}）与 gitea.token 配了没？file.path 要指向盘上真有的文件`,
+    }
+  }
 }
 
 export function apply(ctx: GwbContext): void {
@@ -43,9 +94,6 @@ export function apply(ctx: GwbContext): void {
   if (commands === undefined) throw new Error('ctx.gwbCommands 不在：inject 里写了它，cordis 本不该调用 apply')
   log.info('gitea HTTP 插件已加载')
 
-  // 说明书：**一份说明书一个子目录**（skills/gitea/SKILL.md）——gwb-skills 的收集器只扫
-  // skills/ 的子目录，平铺的 SKILL.md 会被不报错地跳过（2026-09-15 实际遇到过）。
-  // 局部注入——说明书插件没装，命令照常，只是 skill.list 里没这份
   ctx.inject(['gwbSkills'], (c) => {
     c.effect(() => c.gwbSkills.register(SKILLS_DIR))
   })
@@ -75,57 +123,9 @@ export function apply(ctx: GwbContext): void {
     async (args: unknown) => {
       const parsed = parseArgs(args)
       if (!parsed.ok) return { ok: false as const, error: parsed.error }
-
-      const a = parsed.value
-      const baseUrl = asString(settings.get(BASE_URL_KEY)) || DEFAULT_BASE_URL
-      const token = asString(settings.get(TOKEN_KEY))
-      const url = buildUrl(baseUrl, a.path, a.query)
-      const hasFile = a.file !== undefined
-
-      const headers: Record<string, string> = {}
-      let payload: FormData | string | undefined
-      try {
-        if (hasFile) {
-          const fd = new FormData()
-          if (a.body !== undefined) {
-            for (const [k, v] of Object.entries(a.body as Record<string, unknown>)) {
-              fd.append(k, typeof v === 'string' ? v : JSON.stringify(v))
-            }
-          }
-          const f = a.file!
-          fd.append(f.field ?? 'attachment', new Blob([fs.readFileSync(f.path)]), f.name ?? path.basename(f.path))
-          payload = fd
-        } else if (a.body !== undefined) {
-          headers['content-type'] = 'application/json'
-          payload = JSON.stringify(a.body)
-        }
-        if (token !== '') headers.authorization = `token ${token}`
-
-        const res = await fetch(url, {
-          method: a.method,
-          headers,
-          body: payload,
-          signal: AbortSignal.timeout(hasFile ? FILE_TIMEOUT_MS : DEFAULT_TIMEOUT_MS),
-        })
-        const text = await res.text()
-        const shaped = shapeResponse(text, res.headers.get('content-type'))
-        log.info(`${a.method} ${a.path} → ${res.status}${shaped.truncated ? '（body 截断）' : ''}`)
-        return {
-          ok: true as const,
-          data: {
-            status: res.status,
-            truncated: shaped.truncated,
-            ...(shaped.truncated ? { note: 'body 超过 64KB 被截断——用 query 收窄（分页 page/limit）再取' } : {}),
-            body: shaped.body,
-          },
-        }
-      } catch (err) {
-        const msg = redact(err instanceof Error ? (err.stack ?? err.message) : String(err), token)
-        return {
-          ok: false as const,
-          error: `没发出去：${msg}——网络通不通？gitea.base-url（现为 ${baseUrl}）与 gitea.token 配了没？file.path 要指向盘上真有的文件`,
-        }
-      }
+      const baseUrl = stringOrEmpty(settings.get(BASE_URL_KEY)) || DEFAULT_BASE_URL
+      const token = stringOrEmpty(settings.get(TOKEN_KEY))
+      return sendToGitea(parsed.value, baseUrl, token, log)
     },
   )
 }
