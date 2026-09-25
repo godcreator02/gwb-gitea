@@ -1,0 +1,18 @@
+---
+title: '审查报告一条（「回执与日志脱敏」承诺大于实际覆盖）+ 默认实例回退'
+description: '来源：《gwb 全系统审查报告》（2026-09-19），编号沿用 GWB-xx；完整证据链见原报告 `gwb-system-review.md（原报告在本机，未入库）`'
+docfirst: none
+---
+
+* **目标仓**：`D:\unitfolders\26091513gta\gwb-gitea`
+* **来源**：《gwb 全系统审查报告》（2026-09-19），编号沿用 GWB-xx；完整证据链见原报告
+  `gwb-system-review.md（原报告在本机，未入库）`
+* **基准**：仓 main `0ce7c5a`
+
+### GWB-43 「回执与日志脱敏」承诺大于实际覆盖范围（P2 文档与保护范围不一致｜已验证：替身 200 body 回显假 token；真实凭据泄露未确认）
+* 位置：`src/index.ts:115-128`、`src/core.ts:130-134` @0ce7c5a
+* 现象：redact 仅在 catch 内；正常及 4xx/5xx 响应 body 原样返回，成功日志写原始 a.path——README/设置说明把「回执与日志脱敏」写成完整承诺，实现只覆盖一个异常路径（替身 fetch 回显假 token 出现在回执；不据此认定普通 Gitea 端点会回显 Authorization）
+* 期望：进日志/回执前统一做已知 secret 的递归处理；限制日志保留的 path/查询信息；说明里写清精确保护范围。另注意 base-settings 自身裸值回执问题（GWB-11）不能误认为 type:secret 已防 MCP 回显
+
+### 附：默认实例回退（来自 GWB-41 尾巴）
+`DEFAULT_BASE_URL` 用作者实例——首次配置应明确选实例，不能靠缺值回退替代部署选择
