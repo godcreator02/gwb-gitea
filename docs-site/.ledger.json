@@ -1,14 +1,14 @@
 {
   "content/docs/index.mdx": {
-    "../src/index.ts:10-10": {
+    "../src/index.ts:75-76": {
       "kind": "git",
-      "blob": "705fef07ae190e79cbd5d13e2134cb4d4b821196",
-      "commit": "e7b6374716ad144c381a1cc3c0601df728bc743e",
+      "blob": "c3f67b001314c20fc071edad93c7cb4e3cd71262",
+      "commit": "b437858b5e4412ddd9fb48e8b262fde2a1c4b63c",
       "lines": [
-        10,
-        10
+        75,
+        76
       ],
-      "hash": "c89aecb4a9cba86f05fcd85d01fe1aa878d5ae088b7a44faf61ff55e6b9ba9f3"
+      "hash": "0fa43d723d2eeb93212d69ca5c4e03914faf6dce026aa363b93f18a23e5407eb"
     }
   },
   "content/docs/plugin.mdx": {
@@ -48,6 +48,26 @@
         "gitea/",
         "gitea/SKILL.md"
       ]
+    }
+  },
+  "content/docs/system-map.mdx": {
+    "tree ../src depth=1": {
+      "kind": "tree",
+      "names": [
+        "core.ts",
+        "index.ts",
+        "vocab.ts"
+      ]
+    },
+    "../src/core.ts:1-1": {
+      "kind": "git",
+      "blob": "fc2fe60ce1ee8c10d258483aecfc06eb4152d8b4",
+      "commit": "b437858b5e4412ddd9fb48e8b262fde2a1c4b63c",
+      "lines": [
+        1,
+        1
+      ],
+      "hash": "4747612b10de8168ce2ae7606195c982aec015c351e8c1aec998cf9450585485"
     }
   }
 }
