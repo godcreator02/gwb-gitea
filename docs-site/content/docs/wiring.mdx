@@ -27,14 +27,14 @@ description: gwb-gitea 提供的命令、设置项与说明书，注入的三个
 | --- | --- | --- | --- | --- | --- |
 | `gwbCommands` | `@godcreator/gwb-commands` | 必需（`export const inject`） | `^0.5.6` | 登记 `gitea.http` | 插件不加载 |
 | `gwbSettings` | `@godcreator/gwb-settings` | 必需（`export const inject`） | `^0.3.5` | 声明两项设置，每次调用读值 | 插件不加载 |
-| `gwbSkills` | `@godcreator/gwb-skills` | 局部注入（`ctx.inject`） | `^0.4.7`，标 `optional` | 登记 `skills/` 目录 | 命令照常可用，`skill.list` 里没有 `gitea` |
+| `gwbSkills` | `@godcreator/gwb-skills` | 局部注入（`ctx.inject`） | `^0.4.7`，标记为 `optional` | 登记 `skills/` 目录 | 命令照常可用，`skill.list` 里没有 `gitea` |
 
-内核包 `@godcreator/gwb-kernel-desktop` 也写在 peer（`^0.9.0`），只取 `GwbContext` 这类类型；插件不用 `gwbKernel`。
+内核包 `@godcreator/gwb-kernel-desktop` 也写在 peer（`^0.10.0`），只取 `GwbContext` 这类类型；插件不用 `gwbKernel`。
 这几个包都只 `import type`，编译后整句消失，产物里按包名 import 的只有 node 内置模块。
 
 {/* has file="../plugins/gitea/src/index.ts" text="export const inject = ['gwbCommands', 'gwbSettings']" */}
 {/* has file="../plugins/gitea/src/index.ts" text="ctx.inject(['gwbSkills']" */}
-{/* ref file="../plugins/gitea/package.json" lines="24-32" hash="5cd7ff74a401" blob="8f60f17db493" */}
+{/* ref file="../plugins/gitea/package.json" lines="24-32" hash="f994ee53bce8" blob="2206a2b5c3c7" */}
 
 说明书目录的地址按产物位置算：`dist/index.js` 的上一级就是 `skills/`，不写死磁盘路径。说明书插件只扫这个目录下的子目录，
 所以一份说明书一个子目录（`skills/gitea/SKILL.md`），直接放在 `skills/` 下的 `SKILL.md` 会被跳过、也不报错。
