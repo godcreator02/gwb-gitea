@@ -1,5 +1,5 @@
 /**
- * 这个站的 docfirst 配置：用哪个格式包、生成物写到哪、组件规则表是什么。命令行和站读的是同一份。
+ * 这个站的 docfirst 配置：用哪个格式（`@godcreator/docfirst-workflow` 的子入口 `./fumadocs`）、生成物写到哪、组件规则表是什么。命令行和站读的是同一份。
  *
  * 项目根是这个站目录，被钉的代码在 `plugins/gitea/`——引用里写 `../plugins/gitea/…`，按项目根拼路径。
  * 分区按约定：`content/` 下 `trajectory/` 与 `future/` 两个名字固定，其余目录都是现状区、都进 check；
