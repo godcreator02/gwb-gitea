@@ -109,7 +109,7 @@ export function apply(ctx: GwbContext): void {
     key: TOKEN_KEY,
     title: 'gitea token',
     type: 'secret',
-    description: 'gitea 网页上开的 api token（建议只给 api scope）；管道注入 Authorization，回执与日志里脱敏',
+    description: 'gitea 网页上生成的 API token（建议只给 api scope）；只放进请求头 Authorization 发出，日志不记它；请求没发出去时，报错文字里的 token 换成 ***；gitea 正常返回的 body 原样交回',
     default: '',
   })
 

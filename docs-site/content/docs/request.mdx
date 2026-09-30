@@ -72,7 +72,10 @@ path 去掉开头的斜杠，调用方多写了 `api/v1/` 也剥掉（例子里�
 {/* ref file="../plugins/gitea/src/core.ts" lines="111-128" hash="60c8f4834688" blob="f6914560e039" */}
 
 回执形状是 `{ ok: true, data: { status, truncated, note?, body } }`。2xx、4xx、5xx 都走这一条：请求发出去了、
-gitea 回了话，状态码怎么解释由调用方决定。
+gitea 回了话，状态码怎么解释由调用方决定。日志同时记一行：method、path（不含 query）、状态码，截断了再注明一句；
+token 与请求体都不进日志。
+
+{/* ref file="../plugins/gitea/src/index.ts" lines="73-78" hash="0abc7df82136" blob="dc2b31a4e30a" */}
 
 ## 6. 没发出去
 
@@ -81,4 +84,5 @@ gitea 回了话，状态码怎么解释由调用方决定。
 
 {/* ref file="../plugins/gitea/src/index.ts" lines="79-85" hash="04540c1ba390" blob="31c63e1ff1d8" */}
 
-`redact` 只用在这里。gitea 正常返回的 body 原样交回，插件不在里面找 token。
+`redact` 只用在这里。gitea 正常返回的 body 原样交回，插件不在里面找 token：token 只在请求头里发出，
+gitea 的回应不会把它带回来。调用方自己把 token 写进 path、query 或 body 的，插件不替它遮掉。

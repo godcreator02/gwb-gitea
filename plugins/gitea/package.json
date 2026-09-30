@@ -1,6 +1,6 @@
 {
   "name": "@godcreator/gwb-gitea",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "author": {"name": "godcreator"},
   "description": "gitea HTTP 插件：一条 gitea.http 命令把 agent 组装好的 API 调用发往配置的 gitea 实例，补上 /api/v1、注入 token、整理回执；配方与读法写在随包发布的说明书里。",
   "type": "module",
