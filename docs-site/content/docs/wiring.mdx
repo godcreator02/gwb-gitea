@@ -25,7 +25,7 @@ description: gwb-gitea 提供的命令、设置项与说明书，注入的三个
 
 | 服务 | 提供方包 | 必需 / 局部注入 | peer 写法 | 用来做什么 | 缺了会怎样 |
 | --- | --- | --- | --- | --- | --- |
-| `gwbCommands` | `@godcreator/gwb-commands` | 必需（`export const inject`） | `^0.5.6` | 登记 `gitea.http` | 插件不加载 |
+| `gwbCommands` | `@godcreator/gwb-commands` | 必需（`export const inject`） | `^0.6.0` | 登记 `gitea.http` | 插件不加载 |
 | `gwbSettings` | `@godcreator/gwb-settings` | 必需（`export const inject`） | `^0.3.5` | 声明两项设置，每次调用读值 | 插件不加载 |
 | `gwbSkills` | `@godcreator/gwb-skills` | 局部注入（`ctx.inject`） | `^0.4.7`，标记为 `optional` | 登记 `skills/` 目录 | 命令照常可用，`skill.list` 里没有 `gitea` |
 
@@ -34,7 +34,7 @@ description: gwb-gitea 提供的命令、设置项与说明书，注入的三个
 
 {/* ref file="../plugins/gitea/src/index.ts" lines="23-23" hash="64c548c04fe0" blob="90669c8bc915" */}
 {/* ref file="../plugins/gitea/src/index.ts" lines="97-97" hash="322e1eafbdfe" blob="90669c8bc915" */}
-{/* ref file="../plugins/gitea/package.json" lines="24-32" hash="f994ee53bce8" blob="2206a2b5c3c7" */}
+{/* ref file="../plugins/gitea/package.json" lines="24-32" hash="11174ca31c4b" blob="9575f8529f1d" */}
 
 说明书目录的地址按产物位置算：`dist/index.js` 的上一级就是 `skills/`，不写死磁盘路径。说明书插件只扫这个目录下的子目录，
 所以一份说明书一个子目录（`skills/gitea/SKILL.md`），直接放在 `skills/` 下的 `SKILL.md` 会被跳过、也不报错。
