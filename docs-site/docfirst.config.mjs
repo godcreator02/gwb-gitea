@@ -28,7 +28,7 @@ export default {
     // 首页接缝图：图在机读版里看不见，这段文字要把五条接缝都讲到，编号与 src/components/gitea-seams.tsx 一致
     GiteaSeams: (node, h) =>
       h.paragraph(
-        '[接缝图] gwb-gitea 插件与外部的五条接缝：1 命令总线 gwbCommands 登记 gitea.http 并把调用交给处理函数；' +
+        '[接缝图] gwb-gitea 插件与外部的五条接缝：1 命令总线 gwbCommands 登记 gitea.http（effect 标 external）并把调用交给处理函数；' +
           '2 设置 gwbSettings 提供 base-url 与 token，每次调用现读；3 说明书插件 gwbSkills 登记 skills/ 目录（局部注入，缺了只少说明书）；' +
           '4 处理函数用 fetch 调 gitea 实例的 /api/v1，带 token 头；5 带 file 的上传从本机磁盘读 file.path。',
       ),

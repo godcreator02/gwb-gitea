@@ -28,8 +28,8 @@ const SEAMS: Seam[] = [
     path: 'M210,118 H300',
     badge: [255, 118],
     title: '命令总线 → gitea.http 的处理函数',
-    carries: 'commands.register({ name, description, usage }, handler)；handler 收到的 args 是 unknown，回 { ok: true, data } 或 { ok: false, error }',
-    owner: '命令名、参数形状与回执字段由本插件定；登记要求（name、description、usage 非空）由命令总线定，缺了登记时抛错、插件加载失败',
+    carries: "commands.register({ name, description, usage, effect: 'external' }, handler)；handler 收到的 args 是 unknown，回 { ok: true, data } 或 { ok: false, error }",
+    owner: '命令名、参数形状、回执字段与 effect 由本插件定（能对远端建仓、发 release、删仓，所以标 external）；登记要求（name、description、usage 非空）由命令总线定，缺了登记时抛错、插件加载失败',
   },
   {
     n: 2,

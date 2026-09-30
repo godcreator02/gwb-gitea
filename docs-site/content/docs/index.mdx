@@ -22,6 +22,7 @@ agent 按 gitea 的 API 文档拼好一次调用（method、path、query、body�
 
 1. **命令总线 → 处理函数**。agent 经 MCP 入口的 `run` 调 `gitea.http`，命令总线把参数原样交给插件登记的处理函数。
    参数形状、回执字段由本插件定；命令总线只要求登记时 `name`、`description`、`usage` 都不为空。
+   命令标 `effect: 'external'`：它能对远端建仓、发 release、删仓，agent 在 MCP 入口的 `search` 里看得到。
 2. **设置 → 地址与 token**。插件声明 `base-url`（字符串）与 `token`（secret 型）两项，每次调用时读取，改了设置下一次调用就生效。
    分区名 `gitea` 由设置插件按条目 id 算出，值存在哪、secret 怎么显示都归设置插件管。
 3. **说明书插件 → skills/ 目录**。插件只交出 `skills/` 目录的地址，收集和按名字读由说明书插件负责。

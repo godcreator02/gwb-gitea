@@ -119,6 +119,7 @@ export function apply(ctx: GwbContext): void {
       description: '把一条 gitea API 调用发往配置的 gitea 实例，配方与读法见 skill「gitea」',
       usage:
         '参数 { method, path, query?, body?, file? }：method 是 GET / POST / PUT / PATCH / DELETE / HEAD（大小写不限）；path 不带 /api/v1（管道补）；query 的值是字符串 / 数字 / 布尔；GET、HEAD 不带 body / file；file = { path, field?, name? } 出现即 multipart 上传（field 缺省 attachment），这时 body 只能是对象、拆成表单字段。回 { status, truncated, note?, body }——2xx/4xx/5xx 都算发出去了、解释权在调用方，body 超过 64KB 截断并带 note；没发出去才 ok: false',
+      effect: 'external',
     },
     async (args: unknown) => {
       const parsed = parseArgs(args)

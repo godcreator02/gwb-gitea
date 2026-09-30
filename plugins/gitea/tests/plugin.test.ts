@@ -9,7 +9,7 @@ import type { GwbContext } from '@godcreator/gwb-kernel-desktop'
 
 interface Harness {
   ctx: GwbContext
-  commands: Array<{ name: string; description: string; usage: string; plugin?: string }>
+  commands: Array<{ name: string; description: string; usage: string; effect?: string; plugin?: string }>
   handlers: Map<string, (args?: unknown) => Promise<unknown>>
   defines: Array<{ key: string; type: string }>
   skillDirs: Array<string>
@@ -77,6 +77,7 @@ describe('gwb-gitea', () => {
     for (const cmd of h.commands) expect(cmd.plugin).toBeUndefined()
     expect(h.commands[0]?.description.trim()).not.toBe('')
     expect(h.commands[0]?.usage).toContain('method')
+    expect(h.commands[0]?.effect).toBe('external')
     expect(h.skillDirs).toHaveLength(1)
     expect(h.skillDirs[0]).toMatch(/\/skills\/$/)
   })
