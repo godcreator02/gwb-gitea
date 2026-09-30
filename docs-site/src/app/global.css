@@ -1,8 +1,6 @@
 @import 'tailwindcss';
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
-/* 状态点的样式随 @godcreator/docfirst-workflow 的 fumadocs 子入口发布，在这里引入 */
-@import '@godcreator/docfirst-workflow/fumadocs/light.css';
 
 html {
   scrollbar-gutter: stable;
@@ -16,13 +14,4 @@ html {
 .dark {
   --gitea-seam-accent: #fb923c;
   --gitea-seam-accent-soft: color-mix(in srgb, #fb923c 16%, transparent);
-}
-
-.note {
-  border: 1px solid rgba(86, 182, 232, 0.4);
-  border-left: 3px solid rgba(86, 182, 232, 0.7);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin: 18px 0;
-  font-size: 14px;
 }

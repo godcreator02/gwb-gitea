@@ -1,5 +1,5 @@
 /**
- * 这个站的 docfirst 配置：用哪个格式（`@godcreator/docfirst-workflow` 的子入口 `./fumadocs`）、生成物写到哪、组件规则表是什么。命令行和站读的是同一份。
+ * 这个站的 docfirst 配置：生成物写到哪、组件名册是什么。命令行和站读的是同一份。
  *
  * 项目根是这个站目录，被钉的代码在 `plugins/gitea/`——引用里写 `../plugins/gitea/…`，按项目根拼路径。
  * 分区按约定：`content/` 下 `trajectory/` 与 `future/` 两个名字固定，其余目录都是现状区、都进 check；
@@ -11,10 +11,10 @@
  * CLAUDE.md 第一行固定是 `@AGENTS.md`，只给 Claude 的指令写在它后面。
  * 生成正本按原文渲染，里面不能用 JSX 组件。
  */
-import * as fumadocs from '@godcreator/docfirst-workflow/fumadocs'
+import { fumadocsRoster } from '@godcreator/docfirst-workflow/fumadocs/roster'
 
 export default {
-  formats: [fumadocs],
+  content: 'content',
   outputs: {
     'content/docs/outputs/agents.mdx': ['../AGENTS.md'],
     'content/docs/outputs/claude.mdx': ['../CLAUDE.md'],
@@ -24,7 +24,7 @@ export default {
     ],
   },
   components: {
-    ...fumadocs.defaultRoster,
+    ...fumadocsRoster,
     // 首页接缝图：图在机读版里看不见，这段文字要把五条接缝都讲到，编号与 src/components/gitea-seams.tsx 一致
     GiteaSeams: (node, h) =>
       h.paragraph(

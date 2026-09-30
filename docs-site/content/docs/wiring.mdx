@@ -16,9 +16,9 @@ description: gwb-gitea 提供的命令、设置项与说明书，注入的三个
 | 设置项 | `gitea.token` | secret 型，gitea 的 API token |
 | 说明书 | `gitea` | `skills/gitea/SKILL.md`，随包发布 |
 
-{/* has file="../plugins/gitea/src/index.ts" text="name: 'gitea.http'," */}
-{/* has file="../plugins/gitea/src/index.ts" text="key: BASE_URL_KEY," */}
-{/* has file="../plugins/gitea/src/index.ts" text="key: TOKEN_KEY," */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="118-118" hash="cf94a510683b" blob="90669c8bc915" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="102-102" hash="4b3ae62a9a88" blob="90669c8bc915" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="109-109" hash="65b0d32d5d5b" blob="90669c8bc915" */}
 {/* tree dir="../plugins/gitea/skills" depth="2" hash="5c4b8f4235ed" */}
 
 ### 注入
@@ -32,8 +32,8 @@ description: gwb-gitea 提供的命令、设置项与说明书，注入的三个
 内核包 `@godcreator/gwb-kernel-desktop` 也写在 peer（`^0.10.0`），只取 `GwbContext` 这类类型；插件不用 `gwbKernel`。
 这几个包都只 `import type`，编译后整句消失，产物里按包名 import 的只有 node 内置模块。
 
-{/* has file="../plugins/gitea/src/index.ts" text="export const inject = ['gwbCommands', 'gwbSettings']" */}
-{/* has file="../plugins/gitea/src/index.ts" text="ctx.inject(['gwbSkills']" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="23-23" hash="64c548c04fe0" blob="90669c8bc915" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="97-97" hash="322e1eafbdfe" blob="90669c8bc915" */}
 {/* ref file="../plugins/gitea/package.json" lines="24-32" hash="f994ee53bce8" blob="2206a2b5c3c7" */}
 
 说明书目录的地址按产物位置算：`dist/index.js` 的上一级就是 `skills/`，不写死磁盘路径。说明书插件只扫这个目录下的子目录，
