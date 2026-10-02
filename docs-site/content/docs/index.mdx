@@ -1,6 +1,6 @@
 ---
 title: gwb-gitea
-description: 工作台里调 gitea REST API 的插件：一条 gitea.http 命令、两项设置、一份说明书；它连着什么、提供什么、不做什么
+description: 工作台里调 gitea REST API 的插件：一条 gitea.http 命令、三项设置、一份说明书；它连着什么、提供什么、不做什么
 ---
 
 **本页回答**：`@godcreator/gwb-gitea` 做什么、对外提供哪些接口、依赖谁、刻意不做什么，以及从哪一页接着读。
@@ -12,7 +12,7 @@ agent 按 gitea 的 API 文档拼好一次调用（method、path、query、body�
 `{ status, truncated, note?, body }` 交回。建仓、发 release、传产物这些具体做法写在随包发布的说明书 `gitea` 里，
 插件只有这一条命令：新的用法写进说明书，不加新命令。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="118-119" hash="d948d7fec90d" blob="31c63e1ff1d8" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="127-128" hash="d948d7fec90d" blob="bd04439e9ab3" */}
 
 ## 它连着什么
 
@@ -25,6 +25,8 @@ agent 按 gitea 的 API 文档拼好一次调用（method、path、query、body�
    命令标 `effect: 'external'`：它能对远端建仓、发 release、删仓，agent 在 MCP 入口的 `search` 里看得到。
 2. **设置 → 地址与 token**。插件声明 `base-url`（字符串）与 `token`（secret 型）两项，每次调用时读取，改了设置下一次调用就生效。
    分区名 `gitea` 由设置插件按条目 id 算出，值存在哪、secret 怎么显示都归设置插件管。
+   还声明一项 `push-url`：和 gitea 同一台机器上的推送服务 ntfy 的地址，gitea 的 webhook 发到它。本插件自己不用，
+   它跟 gitea 实例一起换，所以和 `base-url` 存在一处；要马上知道 gitea 上事件的插件（gwb-collab）从这里读。
 3. **说明书插件 → skills/ 目录**。插件只交出 `skills/` 目录的地址，收集和按名字读由说明书插件负责。
 4. **处理函数 → gitea 实例**。插件用 node 自带的 `fetch` 调 `<base-url>/api/v1/<path>`，状态码的含义由 gitea 定、插件不解释：
    2xx、4xx、5xx 都照样交回，只有请求根本没发出去才回 `ok: false`。
@@ -39,10 +41,12 @@ agent 按 gitea 的 API 文档拼好一次调用（method、path、query、body�
 | 命令 | `gitea.http` | 参数 `{ method, path, query?, body?, file? }`，回执 `{ status, truncated, note?, body }`；完整用法在命令的 `usage` 里（MCP 入口的 `search` 能看到） |
 | 设置 | `gitea.base-url` | gitea 实例的地址，不带路径；没写协议的按 https |
 | 设置 | `gitea.token` | secret 型，gitea 网页上生成的 API token |
+| 设置 | `gitea.push-url` | 和 gitea 同一台机器上的推送服务 ntfy 的地址，不带路径；默认是团队的那一台 |
 | 说明书 | `gitea` | 怎么配 token、常用调用的写法、状态码怎么读 |
 
 {/* ref file="../plugins/gitea/src/core.ts" lines="4-4" hash="c9828cdc9483" blob="f6914560e039" */}
 {/* ref file="../plugins/gitea/src/core.ts" lines="5-5" hash="52b0cb45e5ee" blob="f6914560e039" */}
+{/* ref file="../plugins/gitea/src/core.ts" lines="7-9" hash="a3f44ce2eea7" blob="e78ff229a1a8" */}
 
 ## 依赖
 
@@ -57,7 +61,8 @@ peer 怎么写、每个服务从哪取，见[插件之间怎么连](/docs/wiring
 - **不自动翻页**：回执超过 64KB 就截断并带 `note`，要调用方用 `page` / `limit` 分页重取
 - **脱敏只管报错**：请求没发出去时，报错文字里出现的 token 换成 `***`；gitea 正常返回的 `body` 原样交回，不做替换。
   token 只放在请求头里发出，gitea 的回应不会把它带回来；日志每次调用只记 method、path 与状态码
-- **不要求先配地址**：`base-url` 没设置时用团队的 gitea 实例，不会报「没配地址」
+- **不要求先配地址**：`base-url`、`push-url` 没设置时用团队的 gitea 实例和它旁边的推送服务，不会报「没配地址」
+- **不订阅推送**：`push-url` 只是存地址，连推送服务、收到消息做什么，由要用它的插件自己管
 
 ## 接着读
 

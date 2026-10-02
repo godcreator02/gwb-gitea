@@ -4,6 +4,9 @@ import { isRecord } from './vocab.js'
 export const BASE_URL_KEY = 'base-url'
 export const TOKEN_KEY = 'token'
 export const DEFAULT_BASE_URL = 'https://git.tianshen02.online:28377'
+/** 和 gitea 同一台机器上的推送服务 ntfy：gitea 的 webhook 发到它，订阅它就能马上知道 gitea 上的事件。本插件不用它，只替要订阅的插件存地址 */
+export const PUSH_URL_KEY = 'push-url'
+export const DEFAULT_PUSH_URL = 'https://ntfy.tianshen02.online:28377'
 
 export const DEFAULT_TIMEOUT_MS = 60_000
 export const FILE_TIMEOUT_MS = 600_000

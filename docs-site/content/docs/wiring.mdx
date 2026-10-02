@@ -14,11 +14,12 @@ description: gwb-gitea 提供的命令、设置项与说明书，注入的三个
 | 命令 | `gitea.http` | 把一次 gitea API 调用发往设置里的实例，参数与回执见[一次调用从参数到回执](/docs/request) |
 | 设置项 | `gitea.base-url` | 字符串，gitea 实例地址 |
 | 设置项 | `gitea.token` | secret 型，gitea 的 API token |
+| 设置项 | `gitea.push-url` | 字符串，和 gitea 同一台机器上的推送服务 ntfy 的地址；本插件不读，gwb-collab 经设置插件的 `settings.all` 读它 |
 | 说明书 | `gitea` | `skills/gitea/SKILL.md`，随包发布 |
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="118-118" hash="cf94a510683b" blob="90669c8bc915" */}
-{/* ref file="../plugins/gitea/src/index.ts" lines="102-102" hash="4b3ae62a9a88" blob="90669c8bc915" */}
-{/* ref file="../plugins/gitea/src/index.ts" lines="109-109" hash="65b0d32d5d5b" blob="90669c8bc915" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="127-127" hash="cf94a510683b" blob="bd04439e9ab3" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="104-104" hash="4b3ae62a9a88" blob="bd04439e9ab3" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="118-118" hash="65b0d32d5d5b" blob="bd04439e9ab3" */}
 {/* tree dir="../plugins/gitea/skills" depth="2" hash="5c4b8f4235ed" */}
 
 ### 注入
@@ -26,20 +27,20 @@ description: gwb-gitea 提供的命令、设置项与说明书，注入的三个
 | 服务 | 提供方包 | 必需 / 局部注入 | peer 写法 | 用来做什么 | 缺了会怎样 |
 | --- | --- | --- | --- | --- | --- |
 | `gwbCommands` | `@godcreator/gwb-commands` | 必需（`export const inject`） | `^0.6.0` | 登记 `gitea.http` | 插件不加载 |
-| `gwbSettings` | `@godcreator/gwb-settings` | 必需（`export const inject`） | `^0.3.5` | 声明两项设置，每次调用读值 | 插件不加载 |
+| `gwbSettings` | `@godcreator/gwb-settings` | 必需（`export const inject`） | `^0.3.5` | 声明三项设置，每次调用读地址与 token | 插件不加载 |
 | `gwbSkills` | `@godcreator/gwb-skills` | 局部注入（`ctx.inject`） | `^0.4.7`，标记为 `optional` | 登记 `skills/` 目录 | 命令照常可用，`skill.list` 里没有 `gitea` |
 
 内核包 `@godcreator/gwb-kernel-desktop` 也写在 peer（`^0.10.0`），只取 `GwbContext` 这类类型；插件不用 `gwbKernel`。
 这几个包都只 `import type`，编译后整句消失，产物里按包名 import 的只有 node 内置模块。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="23-23" hash="64c548c04fe0" blob="90669c8bc915" */}
-{/* ref file="../plugins/gitea/src/index.ts" lines="97-97" hash="322e1eafbdfe" blob="90669c8bc915" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="25-25" hash="64c548c04fe0" blob="bd04439e9ab3" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="99-99" hash="322e1eafbdfe" blob="bd04439e9ab3" */}
 {/* ref file="../plugins/gitea/package.json" lines="24-32" hash="11174ca31c4b" blob="9575f8529f1d" */}
 
 说明书目录的地址按产物位置算：`dist/index.js` 的上一级就是 `skills/`，不写死磁盘路径。说明书插件只扫这个目录下的子目录，
 所以一份说明书一个子目录（`skills/gitea/SKILL.md`），直接放在 `skills/` 下的 `SKILL.md` 会被跳过、也不报错。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="25-26" hash="4373e99e56de" blob="31c63e1ff1d8" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="27-28" hash="4373e99e56de" blob="bd04439e9ab3" */}
 
 ### 按名字调用与约定通道
 

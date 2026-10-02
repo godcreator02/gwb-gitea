@@ -8,8 +8,10 @@ import type {} from '@godcreator/gwb-skills'
 import {
   BASE_URL_KEY,
   DEFAULT_BASE_URL,
+  DEFAULT_PUSH_URL,
   DEFAULT_TIMEOUT_MS,
   FILE_TIMEOUT_MS,
+  PUSH_URL_KEY,
   TOKEN_KEY,
   buildUrl,
   parseArgs,
@@ -104,6 +106,13 @@ export function apply(ctx: GwbContext): void {
     type: 'string',
     description: '协议://主机:口，不带路径；没写协议的当 https',
     default: DEFAULT_BASE_URL,
+  })
+  settings.define({
+    key: PUSH_URL_KEY,
+    title: 'gitea 的推送地址',
+    type: 'string',
+    description: '和 gitea 同一台机器上的推送服务 ntfy，协议://主机:口，不带路径；gitea 的 webhook 发到它，要马上知道 gitea 上事件的插件（如 gwb-collab）订阅它。换 gitea 实例时和地址一起改',
+    default: DEFAULT_PUSH_URL,
   })
   settings.define({
     key: TOKEN_KEY,

@@ -28,7 +28,7 @@ description: gitea.http 收到参数之后依次做了什么：检查参数、�
 query 的值只能是字符串、数字、布尔；GET、HEAD 不能带 body 或 file——node 的 `fetch` 遇到这种请求直接抛 `TypeError`，
 在这一步拦下能给出看得懂的原因；带 file 时 body 只能是对象，因为它要拆成表单字段。
 
-{/* ref file="../plugins/gitea/src/core.ts" lines="13-15" hash="3323f61f306b" blob="f6914560e039" */}
+{/* ref file="../plugins/gitea/src/core.ts" lines="16-18" hash="3323f61f306b" blob="e78ff229a1a8" */}
 
 检查不过的报错文字就是用法：说清哪个参数、要什么、收到了什么。agent 读报错就能改对，不必再去查 `usage`。
 
@@ -37,12 +37,12 @@ query 的值只能是字符串、数字、布尔；GET、HEAD 不能带 body 或
 path 去掉开头的斜杠，调用方多写了 `api/v1/` 也剥掉（例子里剩下 `repos/godcreator/gwb/releases/7/assets`）。
 只剥一次：剥完仍以 `api/v1/` 开头的，是调用方真的要访问这个路径。
 
-{/* ref file="../plugins/gitea/src/core.ts" lines="27-32" hash="77553e37301f" blob="f6914560e039" */}
+{/* ref file="../plugins/gitea/src/core.ts" lines="30-35" hash="77553e37301f" blob="e78ff229a1a8" */}
 
 `base-url` 去掉末尾斜杠，没写协议的按 `https://` 补上，这一条沿用前身 god-gitea 只走 https 的约定。
 然后拼成 `<base-url>/api/v1/<path>`，query 用 `URLSearchParams` 编码接在后面，query 为空时不留问号。
 
-{/* ref file="../plugins/gitea/src/core.ts" lines="94-98" hash="12448936aef4" blob="f6914560e039" */}
+{/* ref file="../plugins/gitea/src/core.ts" lines="97-101" hash="12448936aef4" blob="e78ff229a1a8" */}
 
 ## 3. 组装请求体
 
@@ -53,13 +53,13 @@ path 去掉开头的斜杠，调用方多写了 `api/v1/` 也剥掉（例子里�
 
 设置里有 token 就加头 `authorization: token <token>`，没有就不加。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="39-54" hash="c6e12bbbb5de" blob="31c63e1ff1d8" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="41-56" hash="c6e12bbbb5de" blob="bd04439e9ab3" */}
 
 ## 4. 发出
 
 普通调用 60 秒超时，带 `file` 的 10 分钟：上传大文件时，传到一半被超时打断比传得慢更糟，所以上传给足时间。
 
-{/* ref file="../plugins/gitea/src/core.ts" lines="8-9" hash="4c49074ab753" blob="f6914560e039" */}
+{/* ref file="../plugins/gitea/src/core.ts" lines="11-12" hash="4c49074ab753" blob="e78ff229a1a8" */}
 
 ## 5. 整理回执
 
@@ -69,20 +69,20 @@ path 去掉开头的斜杠，调用方多写了 `api/v1/` 也剥掉（例子里�
 没截断时，满足任一条就试着按 JSON 解析：`content-type` 里有 `json`，或者去掉开头空白后第一个字符是 `{` 或 `[`。
 解析失败（半截 JSON、错误页）按文本交回。gitea 的 API 全部返回 JSON，文本这一档留给意外情况。
 
-{/* ref file="../plugins/gitea/src/core.ts" lines="111-128" hash="60c8f4834688" blob="f6914560e039" */}
+{/* ref file="../plugins/gitea/src/core.ts" lines="114-131" hash="60c8f4834688" blob="e78ff229a1a8" */}
 
 回执形状是 `{ ok: true, data: { status, truncated, note?, body } }`。2xx、4xx、5xx 都走这一条：请求发出去了、
 gitea 回了话，状态码怎么解释由调用方决定。日志同时记一行：method、path（不含 query）、状态码，截断了再注明一句；
 token 与请求体都不进日志。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="73-78" hash="0abc7df82136" blob="dc2b31a4e30a" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="75-80" hash="0abc7df82136" blob="bd04439e9ab3" */}
 
 ## 6. 没发出去
 
 网络不通、地址错、超时、文件读不到，都在处理函数的 `catch` 里变成 `{ ok: false, error }`。报错文字带上异常的调用栈，
 先经 `redact` 把 token 的每次出现换成 `***`，再附上检查方向：网络、`gitea.base-url` 当前的值、`gitea.token`、`file.path`。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="79-85" hash="04540c1ba390" blob="31c63e1ff1d8" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="81-87" hash="04540c1ba390" blob="bd04439e9ab3" */}
 
 `redact` 只用在这里。gitea 正常返回的 body 原样交回，插件不在里面找 token：token 只在请求头里发出，
 gitea 的回应不会把它带回来。调用方自己把 token 写进 path、query 或 body 的，插件不替它遮掉。

@@ -11,7 +11,7 @@ interface Harness {
   ctx: GwbContext
   commands: Array<{ name: string; description: string; usage: string; effect?: string; plugin?: string }>
   handlers: Map<string, (args?: unknown) => Promise<unknown>>
-  defines: Array<{ key: string; type: string }>
+  defines: Array<{ key: string; type: string; default: unknown }>
   skillDirs: Array<string>
   settingValues: Map<string, unknown>
 }
@@ -43,8 +43,8 @@ function harness(settingValues: Record<string, unknown> = {}): Harness {
       },
     },
     gwbSettings: {
-      define: (def: { key: string; type: string }) => {
-        h.defines.push({ key: def.key, type: def.type })
+      define: (def: { key: string; type: string; default: unknown }) => {
+        h.defines.push({ key: def.key, type: def.type, default: def.default })
         return () => {}
       },
       get: (key: string) => h.settingValues.get(key),
@@ -68,10 +68,11 @@ describe('gwb-gitea', () => {
     expect(name).toBe('gwb-gitea')
   })
 
-  it('挂上即：两项设置（token 是 secret 型）、一条命令、说明书目录注册', () => {
+  it('挂上即：三项设置（token 是 secret 型，push-url 默认是团队的推送服务）、一条命令、说明书目录注册', () => {
     const h = harness()
     apply(h.ctx)
-    expect(h.defines.map((d) => d.key).sort()).toEqual(['base-url', 'token'])
+    expect(h.defines.map((d) => d.key).sort()).toEqual(['base-url', 'push-url', 'token'])
+    expect(h.defines.find((d) => d.key === 'push-url')?.default).toBe('https://ntfy.tianshen02.online:28377')
     expect(h.defines.find((d) => d.key === 'token')?.type).toBe('secret')
     expect([...h.handlers.keys()]).toEqual(['gitea.http'])
     for (const cmd of h.commands) expect(cmd.plugin).toBeUndefined()

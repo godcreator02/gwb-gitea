@@ -20,7 +20,8 @@ description: 要对 gitea 发 API 调用时读——建仓、发 release、传�
 4. 确认 token 有效：`gitea.http { "method": "GET", "path": "/user" }` →
    `status: 200`，body 里是你自己的登录名
 
-`gitea.base-url` 设置项默认 `https://git.tianshen02.online:28377`，换实例才改它。
+`gitea.base-url` 设置项默认 `https://git.tianshen02.online:28377`，换实例才改它。换实例时一起改 `gitea.push-url`：
+那台 gitea 旁边的推送服务 ntfy 的地址（默认 `https://ntfy.tianshen02.online:28377`），gwb-collab 订阅它来马上知道 gitea 上的事件。
 
 ## 命令形状
 
