@@ -1,0 +1,10 @@
+---
+title: 令牌说明还写着「只给 api 权限」，新版 Gitea 按细分的权限给令牌
+description: 来源：collab-site 仓，gwb-collab 0.15 两人协作实测（2026-10-02）
+---
+
+`README.md`（正本 `content/docs/outputs/readme.mdx`）和说明书 `gitea`（正本 `content/docs/outputs/skills/gitea.mdx`）都写着令牌「只给 api 权限 / api scope」。这台 Gitea 生成令牌时按细分的权限勾选（仓库、组织、工单、用户……各自选无 / 读 / 读写），没有单独的 api 一项；接口报错的原话是 `token does not have at least one of required scope(s), required=[read:organization], token scope=write:issue,write:repository,read:user`。
+
+实测：成员 carol-test 的令牌缺「组织读」，gwb-collab 克隆整个组织（`GET /orgs/<组织>/repos`）回 403，人照说明书生成的令牌两次都缺这一项。
+
+期望：说明书写清楚「按要调的接口勾对应的权限」，并举出 403 原话里 `required=[…]` 就是缺的那一项、照它重新生成令牌；401/403 那张表里「写接口要 api scope」一并改掉。gwb-collab 要的四项（仓库读写、组织读、工单读、用户读）已写进 gwb-collab 自己的说明书，这里不必重复，只要不再给出过时的 api 写法。
