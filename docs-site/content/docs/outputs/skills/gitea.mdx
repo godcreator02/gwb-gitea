@@ -23,7 +23,7 @@ description: 要对 gitea 发 API 调用时读——建仓（个人名下或组�
    | 查、传 npm 包 | 包 读 / 读写 |
    | 确认 token 是谁（`GET /user`） | 用户 读 |
 
-   用 gwb-collab 的，照它的说明书 `collab`「加入项目」第 3 步勾那四项
+   用 gwb-collab 的，照它的说明书 `collab-project`「加入项目」第 3 步勾那四项
 2. 写进设置：`settings.set { "section": "gitea", "key": "token", "value": "<token>" }`
    （secret 型，不随包发布）。token 由人生成、由人填，你不经手
 3. 确认连得上（不需要 token）：`gitea.http { "method": "GET", "path": "/version" }` →
