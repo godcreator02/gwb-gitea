@@ -8,7 +8,7 @@ gitea 实例，补上 `/api/v1` 前缀、带上 token（secret 型设置项）�
 ## 怎么装
 
 在工作台里调 `plugin-manager.install {"pkg":"@godcreator/gwb-gitea"}`。装完经 MCP 入口的 `run` 调 `gitea.http`；
-token 在 gitea 网页上生成（只给 api 权限），用 `settings.set {"section":"gitea","key":"token","value":"<token>"}` 写进去。
+token 在 gitea 网页上生成，按要调的接口勾仓库、组织、工单这些权限（勾哪几项见说明书 `gitea`），用 `settings.set {"section":"gitea","key":"token","value":"<token>"}` 写进去。
 
 ## 怎么用
 
@@ -18,5 +18,5 @@ token 在 gitea 网页上生成（只给 api 权限），用 `settings.set {"sec
 ## 仓的结构
 
 pnpm workspace：插件包在 `plugins/gitea/`，仓根 `pnpm install`、`pnpm build`、`pnpm check`。
-`docs-site/` 是文档站：`cd docs-site && pnpm install && pnpm dev`，看 `http://localhost:4326`。
+`docs-site/` 是文档站：`cd docs-site && pnpm install && pnpm build && pnpm start`，看 `http://localhost:4326`。
 这份 README 是生成物，正本是 `docs-site/content/docs/outputs/readme.mdx`。
