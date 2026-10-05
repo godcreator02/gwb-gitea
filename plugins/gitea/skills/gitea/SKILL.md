@@ -23,8 +23,8 @@ description: 要对 gitea 发 API 调用时读——建仓（个人名下或组�
    | 确认 token 是谁（`GET /user`） | 用户 读 |
 
    用 gwb-collab 的，照它的说明书 `collab` 的附件 `references/project.md`（`skill.read {"name":"collab","file":"references/project.md"}`）「加入项目」第 3 步勾那四项
-2. 写进设置：`settings.set { "section": "gitea", "key": "token", "value": "<token>" }`
-   （secret 型，不随包发布）。token 由人生成、由人填，你不经手
+2. 先调 `credentials.status { "section": "gitea", "key": "token" }` 看是否已配置。需要配置时读说明书 `gwb-settings`：在用户授权范围内，已有凭据用 `credentials.copy`，文件里的凭据用 `credentials.import`，目标都是 `{ "section": "gitea", "key": "token" }`；跨 home 要明确来源 home，覆盖已有值要明确 `overwrite: true`。
+   这些命令在本机完成复制或导入，只回配置状态，agent 可以直接执行，不需要读取或回显原文。手动输入在本地设置界面完成；`credentials.generate` 生成的随机值不能代替 Gitea 签发的 token。配置结束以状态 `isSet: true` 为准，再做下面的联网验证。
 3. 确认连得上（不需要 token）：`gitea.http { "method": "GET", "path": "/version" }` →
    `status: 200`
 4. 确认 token 有效：`gitea.http { "method": "GET", "path": "/user" }` →

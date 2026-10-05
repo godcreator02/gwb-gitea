@@ -13,7 +13,7 @@ gitea 实例，补上 `/api/v1` 前缀、带上 token（secret 型设置项）�
 ## 怎么装
 
 在工作台里调 `plugin-manager.install {"pkg":"@godcreator/gwb-gitea"}`。装完经 MCP 入口的 `run` 调 `gitea.http`；
-token 在 gitea 网页上生成，按要调的接口勾仓库、组织、工单这些权限（勾哪几项见说明书 `gitea`），用 `settings.set {"section":"gitea","key":"token","value":"<token>"}` 写进去。
+token 在 gitea 网页上生成，按要调的接口勾仓库、组织、工单这些权限（勾哪几项见说明书 `gitea`）。在本地设置界面填写，或经 `credentials.copy` / `credentials.import` 无回显地存入 `gitea.token`；用 `credentials.status {"section":"gitea","key":"token"}` 核对是否已配置。
 
 ## 怎么用
 
