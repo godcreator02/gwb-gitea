@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { apply, name } from '../src/index.js'
+import { apply, name, type GwbGiteaApi } from '../src/index.js'
 import type { GwbContext } from '@godcreator/gwb-kernel-desktop'
 
 /**
@@ -14,6 +14,7 @@ interface Harness {
   defines: Array<{ key: string; type: string; default: unknown }>
   skillDirs: Array<string>
   settingValues: Map<string, unknown>
+  provided: Map<string, unknown>
 }
 
 /** 最小 ctx 替身：logger / effect（立即执行）/ 三张服务表 */
@@ -25,8 +26,15 @@ function harness(settingValues: Record<string, unknown> = {}): Harness {
     defines: [],
     skillDirs: [],
     settingValues: new Map(Object.entries(settingValues)),
+    provided: new Map(),
   }
   h.ctx = {
+    reflect: {
+      provide: (serviceName: string, service: unknown) => {
+        h.provided.set(serviceName, service)
+        return () => {}
+      },
+    },
     logger: () => ({ info() {}, warn() {}, error() {} }),
     effect: (fn: () => unknown) => {
       fn()
@@ -178,5 +186,55 @@ describe('gwb-gitea', () => {
     } finally {
       rmSync(tmp)
     }
+  })
+})
+
+describe('服务 gwbGitea', () => {
+  function serviceOf(h: Harness): GwbGiteaApi {
+    apply(h.ctx)
+    const service = h.provided.get('gwbGitea')
+    expect(service).toBeDefined()
+    return service as GwbGiteaApi
+  }
+
+  it('http 与命令走同一个发送：4xx 照常返回、带上 token', async () => {
+    const service = serviceOf(harness({ token: 'tok-svc' }))
+    const seen: Array<Record<string, string>> = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        seen.push(init.headers as Record<string, string>)
+        return new Response('{"message":"nope"}', { status: 404, headers: { 'content-type': 'application/json' } })
+      }),
+    )
+    const res = await service.http({ method: 'GET', path: '/repos/a/b' })
+    expect(res.status).toBe(404)
+    expect(res.body).toEqual({ message: 'nope' })
+    expect(seen[0]?.authorization).toBe('token tok-svc')
+  })
+
+  it('参数不对、没发出去都抛 Error，token 被脱敏', async () => {
+    const service = serviceOf(harness({ token: 'sectok1234567890' }))
+    await expect(service.http({ method: 'BREW', path: '/x' })).rejects.toThrow(Error)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('fetch failed: sectok1234567890')
+      }),
+    )
+    const err = await service.http({ method: 'GET', path: '/version' }).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(Error)
+    expect((err as Error).message).toContain('没发出去')
+    expect((err as Error).message).not.toContain('sectok1234567890')
+  })
+
+  it('connection 回当前设置，没配的用默认地址、token 是空字符串', () => {
+    expect(serviceOf(harness()).connection()).toEqual({
+      baseUrl: 'https://git.tianshen02.online:28377',
+      pushUrl: 'https://ntfy.tianshen02.online:28377',
+      token: '',
+    })
+    const configured = harness({ 'base-url': 'https://g.example:3000', 'push-url': 'https://n.example', token: 't1' })
+    expect(serviceOf(configured).connection()).toEqual({ baseUrl: 'https://g.example:3000', pushUrl: 'https://n.example', token: 't1' })
   })
 })

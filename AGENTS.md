@@ -13,9 +13,10 @@
 ## 这个仓的结构
 
 pnpm workspace：仓根是不发布的 private 包，插件 `@godcreator/gwb-gitea` 在 `plugins/gitea/`，文档站在 `docs-site/`
-（自己一套依赖，不进 workspace）。插件只有 node 侧，**一条命令** `gitea.http`：各类调用怎么组装、回执怎么读、
+（自己一套依赖，不进 workspace）。插件只有 node 侧，给 agent 的是**一条命令** `gitea.http`：各类调用怎么组装、回执怎么读、
 token 怎么配，全写在 `plugins/gitea/skills/gitea/SKILL.md`、随包发布，代码只负责把请求发出去。
-纯逻辑在 `plugins/gitea/src/core.ts`，测试在 `plugins/gitea/tests/`；真正发出请求只在 `plugins/gitea/src/index.ts` 的处理函数里。
+别的插件不调这条命令，注入服务 `gwbGitea`（`plugins/gitea/src/service.ts`），它和命令走同一个发送函数。
+纯逻辑在 `plugins/gitea/src/core.ts`，测试在 `plugins/gitea/tests/`；真正发出请求只在 `plugins/gitea/src/index.ts` 的发送函数里。
 
 ## 怎么运行
 

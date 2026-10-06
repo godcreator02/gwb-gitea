@@ -6,7 +6,7 @@
  */
 import { useState } from 'react'
 
-type EndId = 'agent' | 'commands' | 'settings' | 'skills' | 'handler' | 'core' | 'gitea' | 'disk'
+type EndId = 'agent' | 'commands' | 'settings' | 'skills' | 'handler' | 'core' | 'gitea' | 'disk' | 'dependents'
 
 interface Seam {
   n: number
@@ -38,7 +38,7 @@ const SEAMS: Seam[] = [
     path: 'M210,218 H250 V150 H300',
     badge: [250, 190],
     title: '设置 → 每次调用读地址与 token',
-    carries: 'settings.define 两项：base-url（string）、token（secret）；每次调用 settings.get 现读，改了设置下一次调用就生效',
+    carries: 'settings.define 三项：base-url（string）、token（secret）、push-url（string）；每次调用 settings.get 现读，改了设置下一次调用就生效',
     owner: '键名与类型由本插件定；分区（gitea）由设置插件按条目 id 最后一段算出，存到哪个文件由设置插件管',
   },
   {
@@ -72,6 +72,16 @@ const SEAMS: Seam[] = [
     carries: 'fs.readFileSync(file.path) 读进 multipart 的一个字段（缺省 attachment），文件名缺省取路径的最后一段',
     owner: '文件在哪由调用方给；读不到（路径错、没权限）和网络错误一样回 ok: false',
   },
+  {
+    n: 6,
+    from: 'handler',
+    to: 'dependents',
+    path: 'M430,96 V24 H560',
+    badge: [495, 24],
+    title: '服务 gwbGitea → 依赖方插件',
+    carries: 'http(request) 与命令 gitea.http 走同一个发送函数，回 { status, truncated, note?, body }，参数不对或没发出去抛 Error；connection() 回 { baseUrl, pushUrl, token }',
+    owner: '方法与返回形状由本插件定，类型从本包导出；依赖方自己决定必需还是局部注入，拿到 token 后怎么用（如拼 git 认证）归依赖方',
+  },
 ]
 
 const AGENT_SEAM = { path: 'M110,40 V96', badge: [110, 68] as [number, number] }
@@ -91,10 +101,11 @@ const BOXES: Box[] = [
   { id: 'commands', x: 40, y: 96, w: 170, h: 44, title: '命令总线', detail: 'gwbCommands' },
   { id: 'settings', x: 40, y: 196, w: 170, h: 44, title: '设置', detail: 'gwbSettings' },
   { id: 'skills', x: 40, y: 296, w: 170, h: 44, title: '说明书', detail: 'gwbSkills（局部注入）' },
-  { id: 'handler', x: 300, y: 96, w: 170, h: 94, title: '命令处理', detail: 'index.ts · sendToGitea' },
+  { id: 'handler', x: 300, y: 96, w: 170, h: 94, title: '命令与服务', detail: 'index.ts · send' },
   { id: 'core', x: 300, y: 250, w: 170, h: 90, title: '检查参数与整理回执', detail: 'core.ts' },
   { id: 'gitea', x: 560, y: 108, w: 170, h: 44, title: 'gitea 实例', detail: '/api/v1 · HTTPS' },
   { id: 'disk', x: 560, y: 278, w: 170, h: 44, title: '本机文件', detail: 'file.path' },
+  { id: 'dependents', x: 560, y: 8, w: 170, h: 32, title: '依赖方插件', detail: 'inject gwbGitea' },
 ]
 
 function seamTouches(seam: Seam, id: EndId): boolean {
@@ -130,7 +141,7 @@ export function GiteaSeams() {
 
   return (
     <div className="not-prose my-6 rounded-xl border border-fd-border bg-fd-card p-3 text-fd-foreground">
-      <svg viewBox="0 0 760 380" role="img" aria-label="gwb-gitea 插件与它连着的五条接缝" className="w-full">
+      <svg viewBox="0 0 760 380" role="img" aria-label="gwb-gitea 插件与它连着的接缝" className="w-full">
         <rect x={24} y={80} width={202} height={280} rx={10} fill="none" className="stroke-fd-border" strokeDasharray="5 4" />
         <text x={32} y={372} fontSize={11} className="fill-fd-muted-foreground">工作台里的别的插件</text>
         <rect x={284} y={80} width={202} height={280} rx={10} fill="none" className="stroke-fd-muted-foreground" strokeDasharray="5 4" />

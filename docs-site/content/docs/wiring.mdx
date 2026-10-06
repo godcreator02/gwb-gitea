@@ -1,9 +1,9 @@
 ---
 title: 插件之间怎么连
-description: gwb-gitea 提供的命令、设置项与说明书，注入的三个服务与 peer 写法，以及它对外直接访问的网络与文件
+description: gwb-gitea 提供的命令、服务、设置项与说明书，注入的三个服务与 peer 写法，以及它对外直接访问的网络与文件
 ---
 
-**本页回答**：本仓插件提供哪些命令、设置项与说明书；注入了哪些服务、是必需还是局部注入、peer 怎么写；按名字调用了别的插件的哪些命令、用了哪些约定通道。
+**本页回答**：本仓插件提供哪些命令、服务、设置项与说明书；注入了哪些服务、是必需还是局部注入、peer 怎么写；按名字调用了别的插件的哪些命令、用了哪些约定通道。
 
 ## @godcreator/gwb-gitea
 
@@ -12,15 +12,17 @@ description: gwb-gitea 提供的命令、设置项与说明书，注入的三个
 | 类别 | 名字 | 说明 |
 | --- | --- | --- |
 | 命令 | `gitea.http` | 把一次 gitea API 调用发往设置里的实例，参数与回执见[一次调用从参数到回执](/docs/request) |
+| 服务 | `gwbGitea` | 给别的插件 inject：`http(request)` 与命令走同一个发送函数、失败抛 `Error`，`connection()` 回 `{ baseUrl, pushUrl, token }`；类型 `GwbGiteaApi` 从包入口导出 |
 | 设置项 | `gitea.base-url` | 字符串，gitea 实例地址 |
 | 设置项 | `gitea.token` | secret 型，gitea 的 API token |
-| 设置项 | `gitea.push-url` | 字符串，和 gitea 同一台机器上的推送服务 ntfy 的地址；本插件不读，gwb-collab 经设置插件的 `settings.all` 读它 |
+| 设置项 | `gitea.push-url` | 字符串，和 gitea 同一台机器上的推送服务 ntfy 的地址；本插件不用，经服务的 `connection()` 交给 gwb-collab |
 | 说明书 | `gitea` | `skills/gitea/SKILL.md`，随包发布 |
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="127-127" hash="cf94a510683b" blob="bd04439e9ab3" */}
-{/* ref file="../plugins/gitea/src/index.ts" lines="104-104" hash="4b3ae62a9a88" blob="bd04439e9ab3" */}
-{/* ref file="../plugins/gitea/src/index.ts" lines="118-118" hash="65b0d32d5d5b" blob="bd04439e9ab3" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="144-144" hash="cf94a510683b" blob="0efaf7f6050f" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="108-108" hash="4b3ae62a9a88" blob="0efaf7f6050f" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="122-122" hash="65b0d32d5d5b" blob="0efaf7f6050f" */}
 {/* tree dir="../plugins/gitea/skills" depth="2" hash="5c4b8f4235ed" */}
+{/* ref file="../plugins/gitea/src/service.ts" lines="33-33" hash="2fef96a41ac1" blob="61d3d76f4c29" */}
 
 ### 注入
 
@@ -31,16 +33,20 @@ description: gwb-gitea 提供的命令、设置项与说明书，注入的三个
 | `gwbSkills` | `@godcreator/gwb-skills` | 局部注入（`ctx.inject`） | `^0.4.7`，标记为 `optional` | 登记 `skills/` 目录 | 命令照常可用，`skill.list` 里没有 `gitea` |
 
 内核包 `@godcreator/gwb-kernel-desktop` 也写在 peer（`^0.10.0`），只取 `GwbContext` 这类类型；插件不用 `gwbKernel`。
-这几个包都只 `import type`，编译后整句消失，产物里按包名 import 的只有 node 内置模块。
+这几个包都只 `import type`，编译后整句消失。`cordis` 也写在 peer（`^4.0.0-rc.10`），由宿主提供，服务类继承它的 `Service`，
+所以产物里按包名 import 的只有 node 内置模块和 `cordis`。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="25-25" hash="64c548c04fe0" blob="bd04439e9ab3" */}
-{/* ref file="../plugins/gitea/src/index.ts" lines="99-99" hash="322e1eafbdfe" blob="bd04439e9ab3" */}
-{/* ref file="../plugins/gitea/package.json" lines="24-32" hash="ffe567c5b964" blob="f0255b40c298" */}
+服务 `GiteaService` 只存发送和读设置两个闭包，不存 `gwbSettings`：cordis 读服务属性时，会把属性里存的服务换成调用方上下文里的那份，
+调用方没 inject `gwbSettings` 就读到 undefined。
+
+{/* ref file="../plugins/gitea/src/index.ts" lines="29-29" hash="64c548c04fe0" blob="0efaf7f6050f" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="103-103" hash="322e1eafbdfe" blob="0efaf7f6050f" */}
+{/* ref file="../plugins/gitea/package.json" lines="24-33" hash="307abe9f1a23" blob="f7c11e2d9a93" */}
 
 说明书目录的地址按产物位置算：`dist/index.js` 的上一级就是 `skills/`，不写死磁盘路径。说明书插件只扫这个目录下的子目录，
 所以一份说明书一个子目录（`skills/gitea/SKILL.md`），直接放在 `skills/` 下的 `SKILL.md` 会被跳过、也不报错。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="27-28" hash="4373e99e56de" blob="bd04439e9ab3" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="31-32" hash="4373e99e56de" blob="0efaf7f6050f" */}
 
 ### 按名字调用与约定通道
 

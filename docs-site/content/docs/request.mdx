@@ -3,15 +3,16 @@ title: 一次调用从参数到回执
 description: gitea.http 收到参数之后依次做了什么：检查参数、拼 URL、组装请求体、发出、整理回执；每一步为什么这样做
 ---
 
-**本页回答**：一次 `gitea.http` 调用在插件里经过哪几步、每一步的规则是什么、为什么这样定；代码分在哪两个文件。
+**本页回答**：一次 `gitea.http` 调用在插件里经过哪几步、每一步的规则是什么、为什么这样定；代码分在哪些文件。
 
-## 代码分在两个文件
+## 代码分在哪些文件
 
-{/* tree dir="../plugins/gitea/src" depth="1" hash="037c9b5c48b9" */}
+{/* tree dir="../plugins/gitea/src" depth="1" hash="6424d24b1f0d" */}
 
 `core.ts` 放不碰网络、不读磁盘、不读设置的纯函数：参数检查、URL 拼接、回执整理、脱敏，给输入看输出，测试在
 `tests/core.test.ts`。`index.ts` 登记命令与设置，处理函数在这里读设置、读文件、发请求。依赖只有一个方向：
 `index.ts` 引 `core.ts`，`core.ts` 只引 `vocab.ts` 里的 `isRecord`。
+`service.ts` 是给别的插件 inject 的服务 `gwbGitea`，自己不发请求：`index.ts` 把发送函数交给它，命令和服务走的是同一个。
 
 {/* ref file="../plugins/gitea/src/core.ts" lines="1-1" hash="4747612b10de" blob="fc2fe60ce1ee" */}
 
@@ -53,7 +54,7 @@ path 去掉开头的斜杠，调用方多写了 `api/v1/` 也剥掉（例子里�
 
 设置里有 token 就加头 `authorization: token <token>`，没有就不加。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="41-56" hash="c6e12bbbb5de" blob="bd04439e9ab3" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="45-60" hash="c6e12bbbb5de" blob="0efaf7f6050f" */}
 
 ## 4. 发出
 
@@ -75,14 +76,14 @@ path 去掉开头的斜杠，调用方多写了 `api/v1/` 也剥掉（例子里�
 gitea 回了话，状态码怎么解释由调用方决定。日志同时记一行：method、path（不含 query）、状态码，截断了再注明一句；
 token 与请求体都不进日志。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="75-80" hash="0abc7df82136" blob="bd04439e9ab3" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="79-84" hash="0abc7df82136" blob="0efaf7f6050f" */}
 
 ## 6. 没发出去
 
 网络不通、地址错、超时、文件读不到，都在处理函数的 `catch` 里变成 `{ ok: false, error }`。报错文字带上异常的调用栈，
 先经 `redact` 把 token 的每次出现换成 `***`，再附上检查方向：网络、`gitea.base-url` 当前的值、`gitea.token`、`file.path`。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="81-87" hash="04540c1ba390" blob="bd04439e9ab3" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="85-91" hash="04540c1ba390" blob="0efaf7f6050f" */}
 
 `redact` 只用在这里。gitea 正常返回的 body 原样交回，插件不在里面找 token：token 只在请求头里发出，
 gitea 的回应不会把它带回来。调用方自己把 token 写进 path、query 或 body 的，插件不替它遮掉。

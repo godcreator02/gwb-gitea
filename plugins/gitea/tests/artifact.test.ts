@@ -52,6 +52,13 @@ describe.skipIf(!built)('产物', () => {
     expect([...bad]).toEqual([])
   })
 
+  it('类型声明里有服务 gwbGitea——依赖方 inject 时靠它拿到类型', () => {
+    const declarations = all.map((f) => path.join(distDir, f.replace(/\.js$/, '.d.ts'))).filter((f) => fs.existsSync(f))
+    const text = declarations.map((f) => fs.readFileSync(f, 'utf8')).join('\n')
+    expect(text).toContain('gwbGitea?: GwbGiteaApi')
+    expect(text).toContain('connection(): GiteaConnection')
+  })
+
   it('说明书随包发布——files 白名单里有 skills', () => {
     const pkg = JSON.parse(fs.readFileSync(path.resolve(here, '../package.json'), 'utf8')) as { files?: string[] }
     expect(pkg.files).toEqual(expect.arrayContaining(['skills']))

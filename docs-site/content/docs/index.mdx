@@ -1,6 +1,6 @@
 ---
 title: gwb-gitea
-description: 工作台里调 gitea REST API 的插件：一条 gitea.http 命令、三项设置、一份说明书；它连着什么、提供什么、不做什么
+description: 工作台里调 gitea REST API 的插件：一条 gitea.http 命令、一个服务 gwbGitea、三项设置、一份说明书；它连着什么、提供什么、不做什么
 ---
 
 **本页回答**：`@godcreator/gwb-gitea` 做什么、对外提供哪些接口、依赖谁、刻意不做什么，以及从哪一页接着读。
@@ -10,9 +10,12 @@ description: 工作台里调 gitea REST API 的插件：一条 gitea.http 命令
 agent 按 gitea 的 API 文档拼好一次调用（method、path、query、body，或者一个要上传的本机文件），交给命令
 `gitea.http`；插件补上 `/api/v1` 前缀、带上设置里的 token、发往设置里的 gitea 实例，再把 gitea 的回应整理成
 `{ status, truncated, note?, body }` 交回。建仓、发 release、传产物这些具体做法写在随包发布的说明书 `gitea` 里，
-插件只有这一条命令：新的用法写进说明书，不加新命令。
+给 agent 的只有这一条命令：新的用法写进说明书，不加新命令。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="127-128" hash="d948d7fec90d" blob="bd04439e9ab3" */}
+别的插件不调这条命令，而是注入服务 `gwbGitea`：`http(request)` 和命令走同一个发送函数，`connection()` 交出地址、
+推送地址与 token，给要自己拼 git 认证、订阅推送的插件（gwb-collab）用。
+
+{/* ref file="../plugins/gitea/src/index.ts" lines="144-145" hash="d948d7fec90d" blob="0efaf7f6050f" */}
 
 ## 它连着什么
 
@@ -26,11 +29,13 @@ agent 按 gitea 的 API 文档拼好一次调用（method、path、query、body�
 2. **设置 → 地址与 token**。插件声明 `base-url`（字符串）与 `token`（secret 型）两项，每次调用时读取，改了设置下一次调用就生效。
    分区名 `gitea` 由设置插件按条目 id 算出，值存在哪、secret 怎么显示都归设置插件管。
    还声明一项 `push-url`：和 gitea 同一台机器上的推送服务 ntfy 的地址，gitea 的 webhook 发到它。本插件自己不用，
-   它跟 gitea 实例一起换，所以和 `base-url` 存在一处；要马上知道 gitea 上事件的插件（gwb-collab）从这里读。
+   它跟 gitea 实例一起换，所以和 `base-url` 存在一处；要马上知道 gitea 上事件的插件（gwb-collab）经服务的 `connection()` 读它。
 3. **说明书插件 → skills/ 目录**。插件只交出 `skills/` 目录的地址，收集和按名字读由说明书插件负责。
 4. **处理函数 → gitea 实例**。插件用 node 自带的 `fetch` 调 `<base-url>/api/v1/<path>`，状态码的含义由 gitea 定、插件不解释：
    2xx、4xx、5xx 都照样交回，只有请求根本没发出去才回 `ok: false`。
 5. **处理函数 → 本机文件**。参数里带 `file` 时，插件从磁盘读 `file.path` 放进 multipart 表单。读不到和网络不通一样回 `ok: false`。
+6. **服务 gwbGitea → 依赖方插件**。`http` 回的字段和命令的 `data` 一样；参数不对、没发出去时抛 `Error`，文字和命令的 `error` 相同。
+   `connection()` 每次现读设置，没配的地址用默认值、没配的 token 是空字符串。
 
 每一步怎么做、为什么这样做，见[一次调用从参数到回执](/docs/request)。
 
@@ -39,10 +44,13 @@ agent 按 gitea 的 API 文档拼好一次调用（method、path、query、body�
 | 类别 | 名字 | 要点 |
 | --- | --- | --- |
 | 命令 | `gitea.http` | 参数 `{ method, path, query?, body?, file? }`，回执 `{ status, truncated, note?, body }`；完整用法在命令的 `usage` 里（MCP 入口的 `search` 能看到） |
+| 服务 | `gwbGitea` | `http(request)` 同命令，失败抛 `Error`；`connection()` 回 `{ baseUrl, pushUrl, token }`；类型 `GwbGiteaApi` 从包入口导出 |
 | 设置 | `gitea.base-url` | gitea 实例的地址，不带路径；没写协议的按 https |
 | 设置 | `gitea.token` | secret 型，gitea 网页上生成的 API token |
 | 设置 | `gitea.push-url` | 和 gitea 同一台机器上的推送服务 ntfy 的地址，不带路径；默认是团队的那一台 |
 | 说明书 | `gitea` | 怎么配 token、常用调用的写法、状态码怎么读 |
+
+{/* ref file="../plugins/gitea/src/service.ts" lines="20-25" hash="a6549f6de952" blob="61d3d76f4c29" */}
 
 {/* ref file="../plugins/gitea/src/core.ts" lines="4-4" hash="c9828cdc9483" blob="f6914560e039" */}
 {/* ref file="../plugins/gitea/src/core.ts" lines="5-5" hash="52b0cb45e5ee" blob="f6914560e039" */}
@@ -51,7 +59,8 @@ agent 按 gitea 的 API 文档拼好一次调用（method、path、query、body�
 ## 依赖
 
 插件依赖工作台里的三个插件：命令总线（登记 `gitea.http`，缺了插件不加载）、设置（读地址与 token，缺了插件不加载）、
-说明书插件（登记说明书，缺了命令照常可用，只是 `skill.list` 里没有 `gitea`）。另外依赖内核包的类型定义。
+说明书插件（登记说明书，缺了命令照常可用，只是 `skill.list` 里没有 `gitea`）。另外依赖内核包的类型定义，
+以及宿主提供的 `cordis`：服务 `gwbGitea` 继承它的 `Service`。
 peer 怎么写、每个服务从哪取，见[插件之间怎么连](/docs/wiring)。
 
 ## 不做的事

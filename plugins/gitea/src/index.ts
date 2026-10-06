@@ -19,6 +19,10 @@ import {
   shapeResponse,
   type HttpArgs,
 } from './core.js'
+import { GiteaService, type GiteaConnection, type GiteaSendResult } from './service.js'
+
+export type { GiteaConnection, GiteaResponse, GwbGiteaApi } from './service.js'
+export type { HttpArgs } from './core.js'
 
 export const name = 'gwb-gitea'
 
@@ -122,6 +126,19 @@ export function apply(ctx: GwbContext): void {
     default: '',
   })
 
+  const connection = (): GiteaConnection => ({
+    baseUrl: stringOrEmpty(settings.get(BASE_URL_KEY)) || DEFAULT_BASE_URL,
+    pushUrl: stringOrEmpty(settings.get(PUSH_URL_KEY)) || DEFAULT_PUSH_URL,
+    token: stringOrEmpty(settings.get(TOKEN_KEY)),
+  })
+  const send = async (args: unknown): Promise<GiteaSendResult> => {
+    const parsed = parseArgs(args)
+    if (!parsed.ok) return { ok: false, error: parsed.error }
+    const { baseUrl, token } = connection()
+    return sendToGitea(parsed.value, baseUrl, token, log)
+  }
+  new GiteaService(ctx, send, connection)
+
   commands.register(
     {
       name: 'gitea.http',
@@ -130,12 +147,6 @@ export function apply(ctx: GwbContext): void {
         '参数 { method, path, query?, body?, file? }：method 是 GET / POST / PUT / PATCH / DELETE / HEAD（大小写不限）；path 不带 /api/v1（管道补）；query 的值是字符串 / 数字 / 布尔；GET、HEAD 不带 body / file；file = { path, field?, name? } 出现即 multipart 上传（field 缺省 attachment），这时 body 只能是对象、拆成表单字段。回 { status, truncated, note?, body }——2xx/4xx/5xx 都算发出去了、解释权在调用方，body 超过 64KB 截断并带 note；没发出去才 ok: false',
       effect: 'external',
     },
-    async (args: unknown) => {
-      const parsed = parseArgs(args)
-      if (!parsed.ok) return { ok: false as const, error: parsed.error }
-      const baseUrl = stringOrEmpty(settings.get(BASE_URL_KEY)) || DEFAULT_BASE_URL
-      const token = stringOrEmpty(settings.get(TOKEN_KEY))
-      return sendToGitea(parsed.value, baseUrl, token, log)
-    },
+    (args: unknown) => send(args),
   )
 }

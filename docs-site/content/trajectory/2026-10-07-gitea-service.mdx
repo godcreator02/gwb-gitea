@@ -1,0 +1,25 @@
+---
+born-at: 2026-10-07T02:10
+type: choice
+parent: [2026-09-15-gwb-gitea]
+label: 服务 gwbGitea
+domain: 插件之间怎么连
+---
+
+## 背景
+
+生态的规矩改成插件之间的能力走 cordis 服务、命令只给进程外的调用方（见 gwb-lifecycle-plugins 的轨迹卡 2026-10-07-services-first）。
+gwb-collab 之前经命令总线按名字调 `gitea.http`，并调 `settings.all` 读 `push-url`、调 `credentials.reveal` 读出 `gitea.token` 原文，
+用来拼 git 推送的认证头。
+
+## 考虑过的方案
+
+- **A：服务把 token 一起交出**。`connection()` 回 `{ baseUrl, pushUrl, token }`，注入这个服务的插件都能拿到 token。
+- **B：服务只发请求，不交 token**。git 认证由本插件代做，collab 就得把 git 操作也交过来，本插件不再只是发 HTTP 请求。
+
+## 结论与边界
+
+用户选 A。按调用方放行凭据这件事由设置插件统一做，不在本插件里各管各的。加服务 `gwbGitea`：`http(request)` 和命令 `gitea.http`
+走同一个发送函数，参数不对或没发出去时抛 `Error`（命令照旧回 `ok: false`）；`connection()` 每次现读设置。
+服务类只存发送和读设置两个闭包，不存 `gwbSettings`，因为 cordis 会把服务属性里存的服务换成调用方上下文里的那份。
+给 agent 的仍然只有 `gitea.http` 一条命令，用法照旧写进说明书。
