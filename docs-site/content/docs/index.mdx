@@ -15,7 +15,7 @@ agent 按 gitea 的 API 文档拼好一次调用（method、path、query、body�
 别的插件不调这条命令，而是注入服务 `gwbGitea`：`http(request)` 和命令走同一个发送函数，`connection()` 交出地址、
 推送地址与 token，给要自己拼 git 认证、订阅推送的插件（gwb-collab）用。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="144-145" hash="d948d7fec90d" blob="0efaf7f6050f" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="151-152" hash="d948d7fec90d" blob="81adbfb43f71" */}
 
 ## 它连着什么
 

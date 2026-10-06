@@ -19,7 +19,14 @@ import {
   shapeResponse,
   type HttpArgs,
 } from './core.js'
-import { GiteaService, type GiteaConnection, type GiteaSendResult } from './service.js'
+import { GiteaService, type GiteaConnection, type GiteaSendResult, type GwbGiteaApi } from './service.js'
+
+/** 写在包入口：devkit.release 只读类型入口 dist/index.d.ts 认服务由谁提供 */
+declare module 'cordis' {
+  interface Context {
+    gwbGitea?: GwbGiteaApi
+  }
+}
 
 export type { GiteaConnection, GiteaResponse, GwbGiteaApi } from './service.js'
 export type { HttpArgs } from './core.js'

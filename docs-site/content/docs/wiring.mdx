@@ -18,9 +18,9 @@ description: gwb-gitea 提供的命令、服务、设置项与说明书，注入
 | 设置项 | `gitea.push-url` | 字符串，和 gitea 同一台机器上的推送服务 ntfy 的地址；本插件不用，经服务的 `connection()` 交给 gwb-collab |
 | 说明书 | `gitea` | `skills/gitea/SKILL.md`，随包发布 |
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="144-144" hash="cf94a510683b" blob="0efaf7f6050f" */}
-{/* ref file="../plugins/gitea/src/index.ts" lines="108-108" hash="4b3ae62a9a88" blob="0efaf7f6050f" */}
-{/* ref file="../plugins/gitea/src/index.ts" lines="122-122" hash="65b0d32d5d5b" blob="0efaf7f6050f" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="151-151" hash="cf94a510683b" blob="81adbfb43f71" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="115-115" hash="4b3ae62a9a88" blob="81adbfb43f71" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="129-129" hash="65b0d32d5d5b" blob="81adbfb43f71" */}
 {/* tree dir="../plugins/gitea/skills" depth="2" hash="5c4b8f4235ed" */}
 {/* ref file="../plugins/gitea/src/service.ts" lines="33-33" hash="2fef96a41ac1" blob="61d3d76f4c29" */}
 
@@ -39,14 +39,14 @@ description: gwb-gitea 提供的命令、服务、设置项与说明书，注入
 服务 `GiteaService` 只存发送和读设置两个闭包，不存 `gwbSettings`：cordis 读服务属性时，会把属性里存的服务换成调用方上下文里的那份，
 调用方没 inject `gwbSettings` 就读到 undefined。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="29-29" hash="64c548c04fe0" blob="0efaf7f6050f" */}
-{/* ref file="../plugins/gitea/src/index.ts" lines="103-103" hash="322e1eafbdfe" blob="0efaf7f6050f" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="36-36" hash="64c548c04fe0" blob="81adbfb43f71" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="110-110" hash="322e1eafbdfe" blob="81adbfb43f71" */}
 {/* ref file="../plugins/gitea/package.json" lines="24-33" hash="307abe9f1a23" blob="f7c11e2d9a93" */}
 
 说明书目录的地址按产物位置算：`dist/index.js` 的上一级就是 `skills/`，不写死磁盘路径。说明书插件只扫这个目录下的子目录，
 所以一份说明书一个子目录（`skills/gitea/SKILL.md`），直接放在 `skills/` 下的 `SKILL.md` 会被跳过、也不报错。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="31-32" hash="4373e99e56de" blob="0efaf7f6050f" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="38-39" hash="4373e99e56de" blob="81adbfb43f71" */}
 
 ### 按名字调用与约定通道
 

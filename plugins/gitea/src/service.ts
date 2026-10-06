@@ -45,9 +45,3 @@ export class GiteaService extends Service implements GwbGiteaApi {
     return this.readConnection()
   }
 }
-
-declare module 'cordis' {
-  interface Context {
-    gwbGitea?: GwbGiteaApi
-  }
-}
