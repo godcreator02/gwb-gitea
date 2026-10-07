@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState, type ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { groupByRepo, issueKey, KIND_LABEL, type IssueDetail, type IssueRow } from '../core.js'
 import { formatTime, OPEN_IN_GITEA_TARGET, REFRESH_VARIANT } from './labels.js'
 
@@ -125,16 +124,16 @@ function IssuesPane({ args }: { args: PaneArgs }): ReactElement {
       </div>
       {listError !== null ? <p className="giteaissues:px-4 giteaissues:py-2 giteaissues:text-sm giteaissues:text-destructive">{listError}</p> : null}
       <div className="giteaissues:flex giteaissues:min-h-0 giteaissues:flex-1 giteaissues:flex-col giteaissues:@md:flex-row">
-        <ScrollArea className="giteaissues:max-h-[40%] giteaissues:border-b giteaissues:@md:max-h-none giteaissues:@md:w-80 giteaissues:@md:border-r giteaissues:@md:border-b-0">
+        <div className="giteaissues:max-h-[40%] giteaissues:min-w-0 giteaissues:overflow-y-auto giteaissues:border-b giteaissues:@md:max-h-none giteaissues:@md:w-80 giteaissues:@md:shrink-0 giteaissues:@md:border-r giteaissues:@md:border-b-0">
           {issues !== null && issues.length === 0 ? <p className="giteaissues:p-4 giteaissues:text-sm giteaissues:text-muted-foreground">没有开着的 issue 与合并请求</p> : null}
           {issues !== null ? <IssueList issues={issues} selectedKey={selected === null ? null : issueKey(selected)} onSelect={(issue) => void select(issue)} /> : null}
-        </ScrollArea>
-        <ScrollArea className="giteaissues:min-h-0 giteaissues:flex-1">
+        </div>
+        <div className="giteaissues:min-h-0 giteaissues:min-w-0 giteaissues:flex-1 giteaissues:overflow-y-auto">
           {selected === null ? <p className="giteaissues:p-4 giteaissues:text-sm giteaissues:text-muted-foreground">点一条看正文与评论</p> : null}
           {detailError !== null ? <p className="giteaissues:p-4 giteaissues:text-sm giteaissues:text-destructive">{detailError}</p> : null}
           {selected !== null && detail === null && detailError === null ? <p className="giteaissues:p-4 giteaissues:text-sm giteaissues:text-muted-foreground">正在读…</p> : null}
           {detail !== null ? <IssueView detail={detail} /> : null}
-        </ScrollArea>
+        </div>
       </div>
     </div>
   )
