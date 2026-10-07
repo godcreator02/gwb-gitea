@@ -1,7 +1,7 @@
 ---
 title: gitea 说明书（SKILL 正本）
 name: gitea
-description: 要对 gitea 发 API 调用时读——建仓（个人名下或组织里）、发 release、传产物、列仓、查 npm 包、团队与成员、分支保护、合并请求的留言与合并。讲 gitea.http 的参数形状、回执怎么读、token 勾哪些权限、常用调用的写法与状态码读法。具体做法全在这份说明书里，插件只负责把请求发出去，没有第二条专用命令。
+description: 要对 gitea 发 API 调用时读——建仓（个人名下或组织里）、发 release、传产物、列仓、查 npm 包、团队与成员、分支保护、开 issue 与留言、合并请求的合并。讲 gitea.http 的参数形状、回执怎么读、token 勾哪些权限、常用调用的写法与状态码读法。具体做法全在这份说明书里，插件只负责把请求发出去，没有第二条专用命令。
 ---
 
 # 用 gitea.http 调 gitea API
@@ -142,6 +142,20 @@ gitea.http { "method": "PATCH", "path": "/repos/{owner}/{repo}/branch_protection
 
 `PATCH` 只改给出的字段，白名单给的是整份新名单，不是追加。改完用 `GET /repos/{owner}/{repo}/branches/main` 核对：
 回执里的 `protected`、`user_can_push`、`user_can_merge` 是按 token 所属账号算的。
+
+### 工单
+
+给别的仓写反馈就是在它的仓里开一条 issue（什么时候开、正文写什么见说明书 `docs-site` 的「给别的仓写反馈」）：
+
+```
+gitea.http { "method": "POST", "path": "/repos/{owner}/{repo}/issues", "body": { "title": "标题", "body": "正文" } }   // 201，body.number 是编号
+gitea.http { "method": "GET", "path": "/repos/{owner}/{repo}/issues", "query": { "state": "open", "type": "issues" } }
+gitea.http { "method": "POST", "path": "/repos/{owner}/{repo}/issues/{number}/comments", "body": { "body": "留言正文" } }
+gitea.http { "method": "PATCH", "path": "/repos/{owner}/{repo}/issues/{number}", "body": { "state": "closed" } }
+```
+
+`labels` 要写标签的数字 id，不收标签名，写名字回 422。几个 owner 名下开着的 issue 与合并请求集中看，用插件
+`@godcreator/gwb-gitea-issues` 的窗格或命令 `gitea-issues.list`。
 
 ### 合并请求
 

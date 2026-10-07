@@ -1,0 +1,68 @@
+---
+title: gwb-gitea-issues
+description: 本仓第二个插件：窗格列出几个 owner 名下开着的 issue 与合并请求，后台定时查新内容、开了推送就私聊到 QQ；它做什么、提供什么、依赖谁、不做什么
+---
+
+**本页回答**：`@godcreator/gwb-gitea-issues` 做什么、对外提供哪些接口、依赖谁、刻意不做什么。
+
+## 做什么
+
+gwb 生态里一个仓给另一个仓的反馈，是在收件仓的 gitea 上开一条 issue（写法在 docfirst 插件的说明书 `docs-site`）。
+这个插件把这些 issue 和合并请求集中起来看：
+
+- **窗格「issue 与合并请求」**：列出设置 `owners` 里每个 owner 名下各仓开着的 issue 与合并请求，按仓分组、最近更新的在前；
+  点一条看正文与全部评论，能跳到 gitea 网页
+- **后台定时查新内容**：每隔 `poll-minutes` 分钟查一遍，跟上次看到的比，算出新开的和评论变多的；开了 `qq-notify`
+  且装着 qq-bot，就把每一条经 `gwbQqBot.notify` 私聊主人
+
+gitea 里合并请求也是一条 issue，编号与评论接口共用，回执里 `pull_request` 不为空的就是合并请求：
+
+{/* ref file="../plugins/gitea-issues/src/core.ts" lines="1-2" hash="46fd33174e87" blob="85df9363d924" */}
+
+搜索接口按 `type` 分开列，所以每个 owner 的 issue 与合并请求各查一遍。`gwbGitea.http` 的回执超过 64KB 会截断，
+带正文的一条就有几 KB，所以一页只取 5 条、取到不满一页为止：
+
+{/* ref file="../plugins/gitea-issues/src/index.ts" lines="180-197" hash="8ca6f9d508f3" blob="7fba215bf542" */}
+
+## 怎么算「新」
+
+上次看到的状态是一张表：每条开着的 issue 或合并请求记它的评论数，存在本插件数据目录的 `seen.json`。这一次查到的里面，
+表里没有的编号算新开的，评论数比表里多的算有新评论；关掉的不再记。没有 `seen.json` 就是第一次查：只记下现状、不算变化，
+所以打开推送不会把已有的全推一遍。
+
+{/* ref file="../plugins/gitea-issues/src/core.ts" lines="112-128" hash="c6d95c2d18b0" blob="85df9363d924" */}
+
+通知的 id 带上评论数，同一条变化 qq-bot 只发一次，再来一条评论就是新的一条：
+
+{/* ref file="../plugins/gitea-issues/src/core.ts" lines="130-133" hash="fbfafb855ab5" blob="85df9363d924" */}
+
+推送不管开没开，每一轮都把这次的状态写回 `seen.json`；推送中途报错（比如 qq-bot 没配主人）就不写回，下一轮再推同一批，
+qq-bot 按 id 去掉已经发出去的那几条：
+
+{/* ref file="../plugins/gitea-issues/src/index.ts" lines="79-92" hash="f653557d772e" blob="7fba215bf542" */}
+
+## 接口
+
+| 类别 | 名字 | 要点 |
+| --- | --- | --- |
+| 命令 | `gitea-issues.list` | 无参数，现查 gitea，回开着的 issue 与合并请求 |
+| 命令 | `gitea-issues.detail` | `{ repo, number }`，回正文与全部评论；合并请求的代码审阅意见不在里面 |
+| 命令 | `gitea-issues.status` | 后台上次查的时间与结果、推出去几条、推送开没开、qq-bot 在不在 |
+| 窗格 | `issues` | 工具窗格「issue 与合并请求」 |
+| 设置 | `gitea-issues.owners` | 字符串列表，缺省 `godcreator`、`god-private` |
+| 设置 | `gitea-issues.poll-minutes` | 数字，缺省 5，最少 1 |
+| 设置 | `gitea-issues.qq-notify` | 布尔，缺省关 |
+
+三条命令都标 `effect: 'read'`：只读 gitea，不改本机也不打扰人。
+
+## 依赖
+
+必需注入命令总线、设置、数据目录、gwb-gitea 的服务 `gwbGitea` 与定时器；外壳与 qq-bot 是局部注入，没装外壳就没有窗格，
+没装 qq-bot 就只是不推送。各服务的 peer 写法见[插件之间怎么连](/docs/wiring)。
+
+## 不做的事
+
+- **不写 gitea**：不开 issue、不评论、不关闭、不合并。开 issue 是 agent 经 `gitea.http` 做的，写法在说明书 `docs-site`
+- **不管协作站项目的组织**：那些组织里的 issue 与合并请求由 gwb-collab 的提示栏与 QQ 通知管，`owners` 缺省不含它们
+- **不推送链接**：QQ 会过滤没在开放平台报备的域名，通知里只写仓名与编号
+- **不渲染 Markdown**：正文与评论按原文显示，要看排版点「在 gitea 打开」

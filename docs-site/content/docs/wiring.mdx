@@ -1,6 +1,6 @@
 ---
 title: 插件之间怎么连
-description: gwb-gitea 提供的命令、服务、设置项与说明书，注入的三个服务与 peer 写法，以及它对外直接访问的网络与文件
+description: 本仓两个插件 gwb-gitea 与 gwb-gitea-issues 提供的命令、服务、窗格、设置项与说明书，注入的服务与 peer 写法，以及对外直接访问的网络与文件
 ---
 
 **本页回答**：本仓插件提供哪些命令、服务、设置项与说明书；注入了哪些服务、是必需还是局部注入、peer 怎么写；按名字调用了别的插件的哪些命令、用了哪些约定通道。
@@ -56,3 +56,36 @@ description: gwb-gitea 提供的命令、服务、设置项与说明书，注入
 | 文件 | 本机磁盘 | 参数里的 `file.path` | 读要上传的文件 |
 
 不按名字调用别的插件的命令。
+
+## @godcreator/gwb-gitea-issues
+
+### 提供
+
+| 类别 | 名字 | 说明 |
+| --- | --- | --- |
+| 命令 | `gitea-issues.list`、`gitea-issues.detail`、`gitea-issues.status` | 都是 `read`，见[gwb-gitea-issues](/docs/issues) |
+| 窗格 | `issues` | 工具窗格「issue 与合并请求」 |
+| 设置项 | `gitea-issues.owners`、`gitea-issues.poll-minutes`、`gitea-issues.qq-notify` | 看哪些 owner、多久查一次、推不推 QQ |
+
+### 注入
+
+| 服务 | 提供方包 | 必需 / 局部注入 | peer 写法 | 用来做什么 | 缺了会怎样 |
+| --- | --- | --- | --- | --- | --- |
+| `gwbCommands` | `@godcreator/gwb-commands` | 必需 | `^0.6.1` | 登记三条命令 | 插件不加载 |
+| `gwbSettings` | `@godcreator/gwb-settings` | 必需 | `^0.4.0` | 声明并读三项设置 | 插件不加载 |
+| `gwbData` | `@godcreator/gwb-data` | 必需 | `^0.1.12` | 数据目录里存上次看到的状态 `seen.json` | 插件不加载 |
+| `gwbGitea` | `@godcreator/gwb-gitea` | 必需 | `^0.1.17` | 经 `http` 查 issue、合并请求与评论 | 插件不加载 |
+| `timer` | `@cordisjs/plugin-timer` | 必需 | `^1.1.3` | 定时查新内容 | 插件不加载 |
+| `gwbShell` | `@godcreator/gwb-shell` | 局部注入，`optional` | `^0.15.11` | 登记窗格 | 没有窗格，命令与推送照常 |
+| `gwbQqBot` | `@godcreator/gwb-qq-bot` | 局部注入，`optional` | `^0.6.0` | `notify` 私聊主人 | 不推送，`status` 里 `qqBotAvailable` 是 false |
+
+{/* ref file="../plugins/gitea-issues/src/index.ts" lines="21-21" hash="1b3ce52f8598" blob="7fba215bf542" */}
+{/* ref file="../plugins/gitea-issues/package.json" lines="29-46" hash="45ed051a3799" blob="d9dd0d3ecd4c" */}
+
+### 按名字调用与约定通道
+
+| 通道 | 对方 | 名字 | 用来做什么 |
+| --- | --- | --- | --- |
+| 文件 | 本插件数据目录 | `seen.json` | 上次看到的每条 issue 与合并请求的评论数 |
+
+不按名字调用别的插件的命令，也不直接连网络：访问 gitea 都经 `gwbGitea.http`。

@@ -13,26 +13,29 @@ description: 仓根 AGENTS.md 的正本——pnpm doc:render 生成到仓根，�
 ## 先读
 
 `docs-site/content/docs/`：首页 `index.mdx`（功能、接缝、接口、依赖、不做的事）→ 要改的那块的页：
-`request.mdx`（一次调用从参数到回执）、`wiring.mdx`（注入与 peer）。
+`request.mdx`（一次调用从参数到回执）、`wiring.mdx`（注入与 peer）、`issues.mdx`（第二个插件 gwb-gitea-issues）。
 
 ## 这个仓的结构
 
-pnpm workspace：仓根是不发布的 private 包，插件 `@godcreator/gwb-gitea` 在 `plugins/gitea/`，文档站在 `docs-site/`
-（自己一套依赖，不进 workspace）。插件只有 node 侧，给 agent 的是**一条命令** `gitea.http`：各类调用怎么组装、回执怎么读、
-token 怎么配，全写在 `plugins/gitea/skills/gitea/SKILL.md`、随包发布，代码只负责把请求发出去。
-别的插件不调这条命令，注入服务 `gwbGitea`（`plugins/gitea/src/service.ts`），它和命令走同一个发送函数。
-纯逻辑在 `plugins/gitea/src/core.ts`，测试在 `plugins/gitea/tests/`；真正发出请求只在 `plugins/gitea/src/index.ts` 的发送函数里。
+pnpm workspace：仓根是不发布的 private 包，文档站在 `docs-site/`（自己一套依赖，不进 workspace）。两个插件各自发版：
+
+- `plugins/gitea/`：`@godcreator/gwb-gitea`，只有 node 侧，给 agent 的是**一条命令** `gitea.http`：各类调用怎么组装、回执怎么读、
+  token 怎么配，全写在 `plugins/gitea/skills/gitea/SKILL.md`、随包发布，代码只负责把请求发出去。
+  别的插件不调这条命令，注入服务 `gwbGitea`（`plugins/gitea/src/service.ts`），它和命令走同一个发送函数。
+  纯逻辑在 `src/core.ts`，真正发出请求只在 `src/index.ts` 的发送函数里
+- `plugins/gitea-issues/`：`@godcreator/gwb-gitea-issues`，窗格列出开着的 issue 与合并请求，后台定时查新内容、推送到 QQ。
+  访问 gitea 只经 `gwbGitea.http`；纯逻辑在 `src/core.ts`，窗格在 `src/client/`
 
 ## 怎么运行
 
 ```bash
 pnpm install
-pnpm build        # 递归构建 plugins/*：tsc 输出到 plugins/gitea/dist/
+pnpm build        # 递归构建 plugins/*，产物在各插件的 dist/
 pnpm check        # 递归检查：typecheck + oxlint + vitest
 ```
 
-在隔离 home 里验证：`devkit.dev {"home":"<home 名>","dir":"<仓根>","packages":["plugins/gitea"]}`，
-发真实请求用 `gitea.http GET /version`（不用 token）。
+在隔离 home 里验证：`devkit.dev {"home":"<home 名>","dir":"<仓根>","packages":["plugins/gitea"]}`（另一个插件换成
+`plugins/gitea-issues`，那个 home 里要先装着 gwb-gitea 并配好 token），发真实请求用 `gitea.http GET /version`（不用 token）。
 
 ## 提交前的检查
 
