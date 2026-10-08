@@ -1,6 +1,6 @@
 {
   "name": "@godcreator/gwb-gitea-issues",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "gitea issue 窗格：列出设置里几个 owner 名下各仓开着的 issue、看正文与评论；后台定时查新 issue 与新评论，开了推送就经 gwbQqBot 私聊主人",
   "type": "module",
   "exports": {
@@ -32,7 +32,7 @@
     "@godcreator/gwb-data": "^0.1.12",
     "@godcreator/gwb-gitea": "^0.1.17",
     "@godcreator/gwb-kernel-desktop": "^0.10.1",
-    "@godcreator/gwb-qq-bot": "^0.6.0",
+    "@godcreator/gwb-qq-bot": "^0.7.0",
     "@godcreator/gwb-settings": "^0.4.0",
     "@godcreator/gwb-shell": "^0.15.11"
   },
