@@ -29,7 +29,6 @@ const COMMENT_PAGE_SIZE = 10
 
 const SETTING_OWNERS = 'owners'
 const SETTING_POLL_MINUTES = 'poll-minutes'
-const SETTING_QQ_NOTIFY = 'qq-notify'
 
 interface PollStatus {
   lastPollAt: string | null
@@ -53,10 +52,6 @@ export function apply(ctx: GwbContext): void {
     key: SETTING_POLL_MINUTES, title: '查新内容的间隔（分钟）', type: 'number', default: 5,
     description: '每隔这么久查一次有没有新的 issue、合并请求与评论，最少 1 分钟；改了下一轮起生效',
   })
-  ctx.gwbSettings.define({
-    key: SETTING_QQ_NOTIFY, title: '推送到 QQ', type: 'boolean', default: false,
-    description: '有新的 issue、合并请求或评论时经 qq-bot 私聊主人。要装着 qq-bot 并配好 owner-openid；第一次查之前已有的不推',
-  })
 
   const readOwners = (): string[] => {
     const value = ctx.gwbSettings.get(SETTING_OWNERS)
@@ -66,7 +61,6 @@ export function apply(ctx: GwbContext): void {
     return value.map((owner: string) => owner.trim())
   }
   const readPollMs = (): number => Math.max(1, Number(ctx.gwbSettings.get(SETTING_POLL_MINUTES))) * 60_000
-  const qqNotifyEnabled = (): boolean => ctx.gwbSettings.get(SETTING_QQ_NOTIFY) === true
 
   let qqBot: GwbQqBotApi | null = null
   ctx.inject(['gwbQqBot'], (scoped) => {
@@ -80,7 +74,7 @@ export function apply(ctx: GwbContext): void {
     const current = await listOpenIssues(gitea!, readOwners())
     const { changes, seen } = changesSince(readSeen(seenFile), current)
     const bot = qqBot
-    if (qqNotifyEnabled() && bot !== null) {
+    if (bot !== null) {
       for (const change of changes) {
         const { excerpt, excerptAuthor } = await excerptOf(gitea!, change)
         const reply = await bot.notify(noticeId(change), noticeText(change, excerpt, excerptAuthor))
@@ -148,13 +142,13 @@ export function apply(ctx: GwbContext): void {
   commands.register(
     {
       name: 'gitea-issues.status',
-      description: '后台查新 issue 与合并请求的状态：上次查的时间与结果、QQ 推送开没开、qq-bot 在不在',
-      usage: '无参数。回 { lastPollAt, lastError, openIssues, notified（本次加载以来推出去的条数）, qqNotify, qqBotAvailable, pollMinutes }',
+      description: '后台查新 issue 与合并请求的状态：上次查的时间与结果、qq-bot 在不在（在就推送到 QQ）',
+      usage: '无参数。回 { lastPollAt, lastError, openIssues, notified（本次加载以来推出去的条数）, qqBotAvailable（装着 qq-bot 就推送）, pollMinutes }',
       effect: 'read',
     },
     async () => ({
       ok: true,
-      data: { ...status, qqNotify: qqNotifyEnabled(), qqBotAvailable: qqBot !== null, pollMinutes: currentPollMs / 60_000 },
+      data: { ...status, qqBotAvailable: qqBot !== null, pollMinutes: currentPollMs / 60_000 },
     }),
   )
 

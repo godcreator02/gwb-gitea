@@ -65,14 +65,14 @@ description: 本仓两个插件 gwb-gitea 与 gwb-gitea-issues 提供的命令�
 | --- | --- | --- |
 | 命令 | `gitea-issues.list`、`gitea-issues.detail`、`gitea-issues.status` | 都是 `read`，见[gwb-gitea-issues](/docs/issues) |
 | 窗格 | `issues` | 工具窗格「issue 与合并请求」 |
-| 设置项 | `gitea-issues.owners`、`gitea-issues.poll-minutes`、`gitea-issues.qq-notify` | 看哪些 owner、多久查一次、推不推 QQ |
+| 设置项 | `gitea-issues.owners`、`gitea-issues.poll-minutes` | 看哪些 owner、多久查一次 |
 
 ### 注入
 
 | 服务 | 提供方包 | 必需 / 局部注入 | peer 写法 | 用来做什么 | 缺了会怎样 |
 | --- | --- | --- | --- | --- | --- |
 | `gwbCommands` | `@godcreator/gwb-commands` | 必需 | `^0.6.1` | 登记三条命令 | 插件不加载 |
-| `gwbSettings` | `@godcreator/gwb-settings` | 必需 | `^0.4.0` | 声明并读三项设置 | 插件不加载 |
+| `gwbSettings` | `@godcreator/gwb-settings` | 必需 | `^0.4.0` | 声明并读两项设置 | 插件不加载 |
 | `gwbData` | `@godcreator/gwb-data` | 必需 | `^0.1.12` | 数据目录里存上次看到的状态 `seen.json` | 插件不加载 |
 | `gwbGitea` | `@godcreator/gwb-gitea` | 必需 | `^0.1.17` | 经 `http` 查 issue、合并请求与评论 | 插件不加载 |
 | `timer` | `@cordisjs/plugin-timer` | 必需 | `^1.1.3` | 定时查新内容 | 插件不加载 |

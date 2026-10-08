@@ -1,7 +1,7 @@
 {
   "name": "@godcreator/gwb-gitea-issues",
-  "version": "0.1.1",
-  "description": "gitea issue 窗格：列出设置里几个 owner 名下各仓开着的 issue、看正文与评论；后台定时查新 issue 与新评论，开了推送就经 gwbQqBot 私聊主人",
+  "version": "0.2.0",
+  "description": "gitea issue 窗格：列出设置里几个 owner 名下各仓开着的 issue、看正文与评论；后台定时查新 issue 与新评论，装着 qq-bot 就经 gwbQqBot 私聊主人",
   "type": "module",
   "exports": {
     ".": "./dist/index.js"

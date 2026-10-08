@@ -1,0 +1,19 @@
+---
+born-at: 2026-10-08T15:40
+type: choice
+parent: [2026-09-15-gwb-gitea]
+label: QQ 推送跟着 qq-bot 走
+domain: gwb-gitea-issues
+---
+
+## 背景
+
+gwb-gitea-issues 0.1 局部注入 `gwbQqBot`，另外有一个设置 `qq-notify`（布尔，缺省关）：装着 qq-bot 还要再打开这个设置才推送。
+在 default home 装上 0.1.1 以后，qq-bot 明明在，推送却是关的，用户问为什么还要有这个设置。
+
+## 结论与边界
+
+用户定：不要开关。`gwbQqBot` 局部注入进来了就推送，没装 qq-bot 就不推。删掉设置 `qq-notify`，`gitea-issues.status` 回执去掉 `qqNotify`，
+只留 `qqBotAvailable`。删了设置项的键和回执字段，照版本规则升 x：0.1.1 → 0.2.0；容器里没有别的包依赖 gwb-gitea-issues。
+
+没有 `seen.json` 的第一次查照旧只记现状不推，所以装上就不会把已有的全推一遍。
