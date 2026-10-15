@@ -1,23 +1,26 @@
 {
   "name": "@godcreator/gwb-gitea-issues",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "gitea issue 窗格：列出设置里几个 owner 名下各仓开着的 issue、看正文与评论；后台定时查新 issue 与新评论，装着 qq-bot 就经 gwbQqBot 私聊主人",
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": "./dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE"
   ],
   "keywords": [
     "gwb-plugin"
   ],
   "repository": {
     "type": "git",
-    "url": "https://git.tianshen02.online:28377/godcreator/gwb-gitea.git"
+    "url": "https://github.com/godcreator02/gwb-gitea.git"
   },
   "publishConfig": {
-    "registry": "https://git.tianshen02.online:28377/api/packages/godcreator/npm/"
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   },
   "scripts": {
     "build": "node build.ts && tailwindcss -i src/client/styles.css -o dist/style.css",

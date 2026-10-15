@@ -1,16 +1,17 @@
 {
   "name": "@godcreator/gwb-gitea",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "author": {"name": "godcreator"},
+  "license": "MIT",
   "description": "gitea HTTP 插件：一条 gitea.http 命令把 agent 组装好的 API 调用发往配置的 gitea 实例，补上 /api/v1、注入 token、整理回执；配方与读法写在随包发布的说明书里；别的插件注入服务 gwbGitea，和命令走同一个发送函数，另能读出地址、推送地址与 token。",
   "type": "module",
   "exports": {
     ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "src", "skills"],
+  "files": ["dist", "src", "skills", "LICENSE"],
   "keywords": ["gwb", "gwb-plugin"],
-  "publishConfig": { "registry": "https://git.tianshen02.online:28377/api/packages/godcreator/npm/" },
+  "publishConfig": { "registry": "https://registry.npmjs.org/", "access": "public" },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
@@ -41,6 +42,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://git.tianshen02.online:28377/godcreator/gwb-gitea.git"
+    "url": "https://github.com/godcreator02/gwb-gitea.git"
   }
 }
