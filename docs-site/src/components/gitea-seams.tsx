@@ -27,9 +27,9 @@ const SEAMS: Seam[] = [
     to: 'handler',
     path: 'M210,118 H300',
     badge: [255, 118],
-    title: '命令总线 → gitea.http 的处理函数',
-    carries: "commands.register({ name, description, usage, effect: 'external' }, handler)；handler 收到的 args 是 unknown，回 { ok: true, data } 或 { ok: false, error }",
-    owner: '命令名、参数形状、回执字段与 effect 由本插件定（能对远端建仓、发 release、删仓，所以标 external）；登记要求（name、description、usage 非空）由命令总线定，缺了登记时抛错、插件加载失败',
+    title: '命令总线 → gitea.http 与 gitea.push-mirror.add 的处理函数',
+    carries: "commands.register({ name, description, usage, effect: 'external' }, handler)，两条命令各登记一次；handler 收到的 args 是 unknown，回 { ok: true, data } 或 { ok: false, error }",
+    owner: '命令名、参数形状、回执字段与 effect 由本插件定（能对远端建仓、发 release、删仓、开镜像，所以标 external）；登记要求（name、description、usage 非空）由命令总线定，缺了登记时抛错、插件加载失败',
   },
   {
     n: 2,
@@ -38,7 +38,7 @@ const SEAMS: Seam[] = [
     path: 'M210,218 H250 V150 H300',
     badge: [250, 190],
     title: '设置 → 每次调用读地址与 token',
-    carries: 'settings.define 三项：base-url（string）、token（secret）、push-url（string）；每次调用 settings.get 现读，改了设置下一次调用就生效',
+    carries: 'settings.define 四项：base-url（string）、token（secret）、push-url（string）、github-token（secret，只有 gitea.push-mirror.add 读）；每次调用 settings.get 现读，改了设置下一次调用就生效',
     owner: '键名与类型由本插件定；分区（gitea）由设置插件按条目 id 最后一段算出，存到哪个文件由设置插件管',
   },
   {
@@ -58,7 +58,7 @@ const SEAMS: Seam[] = [
     path: 'M470,130 H560',
     badge: [515, 130],
     title: '处理函数 → gitea 实例的 REST API',
-    carries: 'fetch(<base-url>/api/v1/<path>?<query>)，头 authorization: token <token>；body 是 JSON 或 multipart；超时 60 秒，带 file 的 10 分钟',
+    carries: 'fetch(<base-url>/api/v1/<path>?<query>)，头 authorization: token <token>；body 是 JSON 或 multipart；超时 60 秒，带 file 的 10 分钟。开推送镜像是 POST repos/<repo>/push_mirrors，GitHub token 在 body 里',
     owner: 'API 路径与状态码的含义由 gitea 定，插件不解释；2xx、4xx、5xx 都原样交回，只有没发出去才回 ok: false',
   },
   {

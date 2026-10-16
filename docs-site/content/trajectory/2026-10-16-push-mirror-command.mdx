@@ -1,0 +1,26 @@
+---
+born-at: 2026-10-16T12:20
+type: choice
+parent: [2026-09-15-gwb-gitea]
+label: 推送镜像命令
+domain: 命令
+---
+
+## 背景
+
+代码托管定成 gitea 是主仓，公开的仓由 gitea 的推送镜像同步到 GitHub `godcreator02` 名下的同名公开仓。开推送镜像是
+`POST /repos/{owner}/{repo}/push_mirrors`，GitHub token 要写在 body 的 `remote_password` 里。用户定了 GitHub token 只能由他自己在工作台的
+设置界面里填，agent 不经手明文：不能出现在命令参数、回执、日志里。根卡定的是「不加写死语义的命令，用法写进说明书」，
+照这条用 `gitea.http` 开镜像，token 就得由 agent 写进 body。
+
+## 考虑过的方案
+
+- **A：照旧用 `gitea.http`，agent 先读出 token 再写进 body**。token 会出现在 agent 的参数与会话记录里，违背用户定的规矩
+- **B：`gitea.http` 加一种从设置里取值填进 body 的写法**。等于给通用命令加一套占位替换，任何调用都能把任意 secret 写进任意请求，范围比开镜像大得多
+- **C：单独一条命令 `gitea.push-mirror.add`**。参数只有 gitea 与 GitHub 的仓名，token 由命令从新设置项 `gitea.github-token` 读，回执只挑镜像信息里不含凭据的字段
+
+## 结论与边界
+
+采用 C，`@godcreator/gwb-gitea` 0.1.20（加命令、加设置，升 y）。根卡「不做专用命令」的结论对不经手凭据的调用仍然成立：
+查看、手动同步、删除镜像都不用 GitHub token，照旧写成说明书里的 `gitea.http` 调用，不加命令。
+以后再有要经手 agent 不能碰的凭据的调用，才照这张卡单独成命令。

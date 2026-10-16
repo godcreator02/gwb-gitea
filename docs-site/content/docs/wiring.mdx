@@ -12,15 +12,19 @@ description: 本仓两个插件 gwb-gitea 与 gwb-gitea-issues 提供的命令�
 | 类别 | 名字 | 说明 |
 | --- | --- | --- |
 | 命令 | `gitea.http` | 把一次 gitea API 调用发往设置里的实例，参数与回执见[一次调用从参数到回执](/docs/request) |
+| 命令 | `gitea.push-mirror.add` | 用设置里的 GitHub token 给 gitea 上的仓开推送镜像，见[一次调用从参数到回执](/docs/request)的最后一节 |
 | 服务 | `gwbGitea` | 给别的插件 inject：`http(request)` 与命令走同一个发送函数、失败抛 `Error`，`connection()` 回 `{ baseUrl, pushUrl, token }`；类型 `GwbGiteaApi` 从包入口导出 |
 | 设置项 | `gitea.base-url` | 字符串，gitea 实例地址 |
 | 设置项 | `gitea.token` | secret 型，gitea 的 API token |
+| 设置项 | `gitea.github-token` | secret 型，GitHub token，只有 `gitea.push-mirror.add` 读；服务的 `connection()` 不交出它 |
 | 设置项 | `gitea.push-url` | 字符串，和 gitea 同一台机器上的推送服务 ntfy 的地址；本插件不用，经服务的 `connection()` 交给 gwb-collab |
 | 说明书 | `gitea` | `skills/gitea/SKILL.md`，随包发布 |
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="151-151" hash="cf94a510683b" blob="81adbfb43f71" */}
-{/* ref file="../plugins/gitea/src/index.ts" lines="115-115" hash="4b3ae62a9a88" blob="81adbfb43f71" */}
-{/* ref file="../plugins/gitea/src/index.ts" lines="129-129" hash="65b0d32d5d5b" blob="81adbfb43f71" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="183-183" hash="cf94a510683b" blob="0849a65c26fe" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="123-123" hash="4b3ae62a9a88" blob="0849a65c26fe" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="137-137" hash="65b0d32d5d5b" blob="0849a65c26fe" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="194-194" hash="58f8f86ed226" blob="0849a65c26fe" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="144-144" hash="5c9ff10d9c20" blob="0849a65c26fe" */}
 {/* tree dir="../plugins/gitea/skills" depth="2" hash="5c4b8f4235ed" */}
 {/* ref file="../plugins/gitea/src/service.ts" lines="33-33" hash="2fef96a41ac1" blob="61d3d76f4c29" */}
 
@@ -28,8 +32,8 @@ description: 本仓两个插件 gwb-gitea 与 gwb-gitea-issues 提供的命令�
 
 | 服务 | 提供方包 | 必需 / 局部注入 | peer 写法 | 用来做什么 | 缺了会怎样 |
 | --- | --- | --- | --- | --- | --- |
-| `gwbCommands` | `@godcreator/gwb-commands` | 必需（`export const inject`） | `^0.6.0` | 登记 `gitea.http` | 插件不加载 |
-| `gwbSettings` | `@godcreator/gwb-settings` | 必需（`export const inject`） | `^0.4.0` | 声明三项设置，每次调用读地址与 token | 插件不加载 |
+| `gwbCommands` | `@godcreator/gwb-commands` | 必需（`export const inject`） | `^0.6.0` | 登记 `gitea.http` 与 `gitea.push-mirror.add` | 插件不加载 |
+| `gwbSettings` | `@godcreator/gwb-settings` | 必需（`export const inject`） | `^0.4.0` | 声明四项设置，每次调用读地址与 token | 插件不加载 |
 | `gwbSkills` | `@godcreator/gwb-skills` | 局部注入（`ctx.inject`） | `^0.4.7`，标记为 `optional` | 登记 `skills/` 目录 | 命令照常可用，`skill.list` 里没有 `gitea` |
 
 内核包 `@godcreator/gwb-kernel-desktop` 也写在 peer（`^0.10.0`），只取 `GwbContext` 这类类型；插件不用 `gwbKernel`。
@@ -39,20 +43,20 @@ description: 本仓两个插件 gwb-gitea 与 gwb-gitea-issues 提供的命令�
 服务 `GiteaService` 只存发送和读设置两个闭包，不存 `gwbSettings`：cordis 读服务属性时，会把属性里存的服务换成调用方上下文里的那份，
 调用方没 inject `gwbSettings` 就读到 undefined。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="36-36" hash="64c548c04fe0" blob="81adbfb43f71" */}
-{/* ref file="../plugins/gitea/src/index.ts" lines="110-110" hash="322e1eafbdfe" blob="81adbfb43f71" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="44-44" hash="64c548c04fe0" blob="0849a65c26fe" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="118-118" hash="322e1eafbdfe" blob="0849a65c26fe" */}
 {/* ref file="../plugins/gitea/package.json" lines="25-34" hash="307abe9f1a23" blob="a35fb2c49a49" */}
 
 说明书目录的地址按产物位置算：`dist/index.js` 的上一级就是 `skills/`，不写死磁盘路径。说明书插件只扫这个目录下的子目录，
 所以一份说明书一个子目录（`skills/gitea/SKILL.md`），直接放在 `skills/` 下的 `SKILL.md` 会被跳过、也不报错。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="38-39" hash="4373e99e56de" blob="81adbfb43f71" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="46-47" hash="4373e99e56de" blob="0849a65c26fe" */}
 
 ### 按名字调用与约定通道
 
 | 通道 | 对方 | 名字 | 用来做什么 |
 | --- | --- | --- | --- |
-| 网络 | gitea 实例 | `<base-url>/api/v1/…` | 发出 `gitea.http` 的调用 |
+| 网络 | gitea 实例 | `<base-url>/api/v1/…` | 发出 `gitea.http` 与 `gitea.push-mirror.add` 的调用 |
 | 文件 | 本机磁盘 | 参数里的 `file.path` | 读要上传的文件 |
 
 不按名字调用别的插件的命令。

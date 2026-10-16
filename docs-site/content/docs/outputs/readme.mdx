@@ -8,7 +8,8 @@ description: 仓根 README.md 的正本——pnpm doc:render 生成到仓根
 gwb 工作台里调 gitea REST API 的插件 `@godcreator/gwb-gitea`：一条 `gitea.http` 命令把 agent 拼好的 API 调用发往设置里的
 gitea 实例，补上 `/api/v1` 前缀、带上 token（secret 型设置项）、把回应整理成 `{ status, truncated, note?, body }`
 （2xx、4xx、5xx 都照样交回），带 `file` 参数时按 multipart 上传。**没有**建仓命令、发版命令：各类调用怎么写在随包发布的
-说明书 `plugins/gitea/skills/gitea/SKILL.md` 里。别的插件注入服务 `gwbGitea`，和命令走同一个发送函数。
+说明书 `plugins/gitea/skills/gitea/SKILL.md` 里。另一条命令 `gitea.push-mirror.add` 给 gitea 上的仓开推送镜像、同步到 GitHub，
+GitHub token 由用户在设置界面填进 `gitea.github-token`，不经 agent。别的插件注入服务 `gwbGitea`，和 `gitea.http` 走同一个发送函数。
 
 ## 怎么装
 

@@ -19,6 +19,14 @@ import {
   shapeResponse,
   type HttpArgs,
 } from './core.js'
+import {
+  GITHUB_TOKEN_KEY,
+  buildPushMirrorRequest,
+  describeGiteaRejection,
+  parsePushMirrorArgs,
+  pushMirrorReceipt,
+  type PushMirrorReceipt,
+} from './push-mirror.js'
 import { GiteaService, type GiteaConnection, type GiteaSendResult, type GwbGiteaApi } from './service.js'
 
 /** 写在包入口：devkit.release 只读类型入口 dist/index.d.ts 认服务由谁提供 */
@@ -132,6 +140,14 @@ export function apply(ctx: GwbContext): void {
     description: 'gitea 网页上生成的 API token（建议只给 api scope）；只放进请求头 Authorization 发出，日志不记它；请求没发出去时，报错文字里的 token 换成 ***；gitea 正常返回的 body 原样交回',
     default: '',
   })
+  settings.define({
+    key: GITHUB_TOKEN_KEY,
+    title: 'GitHub token（推送镜像用）',
+    type: 'secret',
+    description:
+      '命令 gitea.push-mirror.add 开推送镜像时交给 gitea，gitea 用它把仓推到 GitHub。fine-grained token：仓库范围只选 godcreator02 名下要镜像的仓，权限 Contents 读写；或经典 token 勾 repo。只能在这里手动填，命令的参数、回执、日志都不带它',
+    default: '',
+  })
 
   const connection = (): GiteaConnection => ({
     baseUrl: stringOrEmpty(settings.get(BASE_URL_KEY)) || DEFAULT_BASE_URL,
@@ -146,14 +162,41 @@ export function apply(ctx: GwbContext): void {
   }
   new GiteaService(ctx, send, connection)
 
+  const addPushMirror = async (args: unknown): Promise<{ ok: true; data: PushMirrorReceipt } | { ok: false; error: string }> => {
+    const parsed = parsePushMirrorArgs(args)
+    if (!parsed.ok) return parsed
+    const githubToken = stringOrEmpty(settings.get(GITHUB_TOKEN_KEY))
+    if (githubToken === '') {
+      return { ok: false, error: `GitHub token 没配：请用户在工作台设置界面的 gitea 分区填「GitHub token（推送镜像用）」（gitea.${GITHUB_TOKEN_KEY}），填好再调` }
+    }
+    const { baseUrl, token } = connection()
+    const sent = await sendToGitea(buildPushMirrorRequest(parsed.value, githubToken), baseUrl, token, log)
+    if (!sent.ok) return { ok: false, error: redact(sent.error, githubToken) }
+    const { status, body } = sent.data
+    if (status < 200 || status >= 300) return { ok: false, error: describeGiteaRejection(status, body, githubToken) }
+    const receipt = pushMirrorReceipt(body, githubToken)
+    return receipt.ok ? { ok: true, data: receipt.value } : receipt
+  }
+
   commands.register(
     {
       name: 'gitea.http',
-      description: '把一条 gitea API 调用发往配置的 gitea 实例，配方与读法见 skill「gitea」',
+      description: '把一条 gitea API 调用发往配置的 gitea 实例，调用写法与回执读法见 skill「gitea」',
       usage:
-        '参数 { method, path, query?, body?, file? }：method 是 GET / POST / PUT / PATCH / DELETE / HEAD（大小写不限）；path 不带 /api/v1（管道补）；query 的值是字符串 / 数字 / 布尔；GET、HEAD 不带 body / file；file = { path, field?, name? } 出现即 multipart 上传（field 缺省 attachment），这时 body 只能是对象、拆成表单字段。回 { status, truncated, note?, body }——2xx/4xx/5xx 都算发出去了、解释权在调用方，body 超过 64KB 截断并带 note；没发出去才 ok: false',
+        '参数 { method, path, query?, body?, file? }：method 是 GET / POST / PUT / PATCH / DELETE / HEAD（大小写不限）；path 不带 /api/v1（插件补上）；query 的值是字符串 / 数字 / 布尔；GET、HEAD 不带 body / file；file = { path, field?, name? } 出现即 multipart 上传（field 缺省 attachment），这时 body 只能是对象、拆成表单字段。回 { status, truncated, note?, body }——2xx/4xx/5xx 都算发出去了、解释权在调用方，body 超过 64KB 截断并带 note；没发出去才 ok: false',
       effect: 'external',
     },
     (args: unknown) => send(args),
+  )
+
+  commands.register(
+    {
+      name: 'gitea.push-mirror.add',
+      description: '给 gitea 上的仓开一条推送镜像，同步到 GitHub 上的仓；GitHub token 取自设置 gitea.github-token，不经参数。写法见 skill「gitea」的「开推送镜像」',
+      usage:
+        '参数 { repo, github }：repo 是 gitea 上的 owner/name，github 是 GitHub 上的 owner/name，不收别的参数。GitHub token 由用户在设置界面填进 gitea.github-token，没配直接报错。镜像每 8 小时同步一次，gitea 上每次推送后也同步。回 { repo_name, remote_name, remote_address, interval, sync_on_commit, created, last_update, last_error }，不含 token；gitea 回非 2xx 报错，带状态码与 gitea 的 message',
+      effect: 'external',
+    },
+    (args: unknown) => addPushMirror(args),
   )
 }

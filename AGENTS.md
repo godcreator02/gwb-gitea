@@ -14,8 +14,9 @@
 
 pnpm workspace：仓根是不发布的 private 包，文档站在 `docs-site/`（自己一套依赖，不进 workspace）。两个插件各自发版：
 
-- `plugins/gitea/`：`@godcreator/gwb-gitea`，只有 node 侧，给 agent 的是**一条命令** `gitea.http`：各类调用怎么组装、回执怎么读、
+- `plugins/gitea/`：`@godcreator/gwb-gitea`，只有 node 侧，给 agent 的主命令是 `gitea.http`：各类调用怎么组装、回执怎么读、
   token 怎么配，全写在 `plugins/gitea/skills/gitea/SKILL.md`、随包发布，代码只负责把请求发出去。
+  另一条命令 `gitea.push-mirror.add` 开推送镜像，纯函数在 `src/push-mirror.ts`：GitHub token 只能从设置 `gitea.github-token` 取、不经 agent，所以单独成命令。
   别的插件不调这条命令，注入服务 `gwbGitea`（`plugins/gitea/src/service.ts`），它和命令走同一个发送函数。
   纯逻辑在 `src/core.ts`，真正发出请求只在 `src/index.ts` 的发送函数里
 - `plugins/gitea-issues/`：`@godcreator/gwb-gitea-issues`，窗格列出开着的 issue 与合并请求，后台定时查新内容、推送到 QQ。
@@ -43,5 +44,6 @@ cd docs-site && pnpm doc
 
 ## 不能做的
 
-- 别往 `plugins/gitea/src/index.ts` 里加「建仓命令」「发版命令」：那等于把用法写死在代码里，新的调用写法写进说明书
+- 别往 `plugins/gitea/src/index.ts` 里加「建仓命令」「发版命令」：那等于把用法写死在代码里，新的调用写法写进说明书。
+  只有要经手 agent 不能碰的凭据时才单独成命令（现在只有 `gitea.push-mirror.add`）
 - 这份 AGENTS.md 是生成物，正本是 `docs-site/content/docs/outputs/agents.mdx`，改那边再 `pnpm doc:render`

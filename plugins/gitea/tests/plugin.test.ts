@@ -76,17 +76,21 @@ describe('gwb-gitea', () => {
     expect(name).toBe('gwb-gitea')
   })
 
-  it('挂上即：三项设置（token 是 secret 型，push-url 默认是团队的推送服务）、一条命令、说明书目录注册', () => {
+  it('挂上即：四项设置（两个 token 是 secret 型，push-url 默认是团队的推送服务）、两条命令、说明书目录注册', () => {
     const h = harness()
     apply(h.ctx)
-    expect(h.defines.map((d) => d.key).sort()).toEqual(['base-url', 'push-url', 'token'])
+    expect(h.defines.map((d) => d.key).sort()).toEqual(['base-url', 'github-token', 'push-url', 'token'])
     expect(h.defines.find((d) => d.key === 'push-url')?.default).toBe('https://ntfy.tianshen02.online:28377')
     expect(h.defines.find((d) => d.key === 'token')?.type).toBe('secret')
-    expect([...h.handlers.keys()]).toEqual(['gitea.http'])
-    for (const cmd of h.commands) expect(cmd.plugin).toBeUndefined()
-    expect(h.commands[0]?.description.trim()).not.toBe('')
+    expect(h.defines.find((d) => d.key === 'github-token')?.type).toBe('secret')
+    expect([...h.handlers.keys()]).toEqual(['gitea.http', 'gitea.push-mirror.add'])
+    for (const cmd of h.commands) {
+      expect(cmd.plugin).toBeUndefined()
+      expect(cmd.description.trim()).not.toBe('')
+      expect(cmd.effect).toBe('external')
+    }
     expect(h.commands[0]?.usage).toContain('method')
-    expect(h.commands[0]?.effect).toBe('external')
+    expect(h.commands[1]?.usage).toContain('github')
     expect(h.skillDirs).toHaveLength(1)
     expect(h.skillDirs[0]).toMatch(/\/skills\/$/)
   })
@@ -186,6 +190,130 @@ describe('gwb-gitea', () => {
     } finally {
       rmSync(tmp)
     }
+  })
+})
+
+describe('gitea.push-mirror.add', () => {
+  const GITHUB_TOKEN = 'ghp_secret_github_token_123'
+  type CommandResult = { ok: boolean; error?: string; data?: Record<string, unknown> }
+
+  function stubGiteaReply(status: number, body: unknown): Array<[string, RequestInit]> {
+    const calls: Array<[string, RequestInit]> = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init: RequestInit) => {
+        calls.push([url, init])
+        return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
+      }),
+    )
+    return calls
+  }
+
+  const giteaMirror = {
+    repo_name: 'gwb-gitea',
+    remote_name: 'remote_mirror_abc',
+    remote_address: 'https://github.com/godcreator02/gwb-gitea.git',
+    interval: '8h0m0s',
+    sync_on_commit: true,
+    created: '2026-10-16T10:00:00+08:00',
+    last_update: '',
+    last_error: '',
+    remote_password: GITHUB_TOKEN,
+  }
+
+  it('参数缺、格式不对、多出认不出的参数都直接报错，不发请求', async () => {
+    const h = harness({ 'github-token': GITHUB_TOKEN })
+    apply(h.ctx)
+    const calls = stubGiteaReply(201, giteaMirror)
+    for (const bad of [
+      '不是对象',
+      { github: 'godcreator02/gwb-gitea' },
+      { repo: 'godcreator/gwb-gitea' },
+      { repo: 'gwb-gitea', github: 'godcreator02/gwb-gitea' },
+      { repo: 'godcreator/gwb-gitea', github: 'https://github.com/godcreator02/gwb-gitea' },
+      { repo: 'godcreator/gwb-gitea', github: 'godcreator02/gwb-gitea', interval: '1h' },
+    ]) {
+      const res = (await h.handlers.get('gitea.push-mirror.add')!(bad)) as CommandResult
+      expect(res.ok, JSON.stringify(bad)).toBe(false)
+      expect(res.error).toBeTruthy()
+    }
+    expect(calls).toHaveLength(0)
+  })
+
+  it('GitHub token 没配：报错写明去设置界面填哪一项，不发请求', async () => {
+    const h = harness({ token: 'gitea-tok' })
+    apply(h.ctx)
+    const calls = stubGiteaReply(201, giteaMirror)
+    const res = (await h.handlers.get('gitea.push-mirror.add')!({ repo: 'godcreator/gwb-gitea', github: 'godcreator02/gwb-gitea' })) as CommandResult
+    expect(res.ok).toBe(false)
+    expect(res.error).toContain('gitea.github-token')
+    expect(res.error).toContain('设置界面')
+    expect(calls).toHaveLength(0)
+  })
+
+  it('请求形状：POST 到 gitea 仓的 push_mirrors，带 gitea token 头，body 里是 GitHub 地址、owner、token、8 小时与推送即同步', async () => {
+    const h = harness({ token: 'gitea-tok', 'github-token': GITHUB_TOKEN })
+    apply(h.ctx)
+    const calls = stubGiteaReply(201, giteaMirror)
+    await h.handlers.get('gitea.push-mirror.add')!({ repo: 'godcreator/gwb-gitea', github: 'godcreator02/gwb-gitea' })
+    expect(calls).toHaveLength(1)
+    const [url, init] = calls[0]!
+    expect(url).toBe('https://git.tianshen02.online:28377/api/v1/repos/godcreator/gwb-gitea/push_mirrors')
+    expect(init.method).toBe('POST')
+    expect((init.headers as Record<string, string>).authorization).toBe('token gitea-tok')
+    expect(JSON.parse(init.body as string)).toEqual({
+      remote_address: 'https://github.com/godcreator02/gwb-gitea.git',
+      remote_username: 'godcreator02',
+      remote_password: GITHUB_TOKEN,
+      interval: '8h0m0s',
+      sync_on_commit: true,
+    })
+  })
+
+  it('回执只有镜像信息里不含凭据的字段，哪儿都没有 token', async () => {
+    const h = harness({ token: 'gitea-tok', 'github-token': GITHUB_TOKEN })
+    apply(h.ctx)
+    stubGiteaReply(201, giteaMirror)
+    const res = (await h.handlers.get('gitea.push-mirror.add')!({ repo: 'godcreator/gwb-gitea', github: 'godcreator02/gwb-gitea' })) as CommandResult
+    expect(res.ok).toBe(true)
+    expect(res.data).toEqual({
+      repo_name: 'gwb-gitea',
+      remote_name: 'remote_mirror_abc',
+      remote_address: 'https://github.com/godcreator02/gwb-gitea.git',
+      interval: '8h0m0s',
+      sync_on_commit: true,
+      created: '2026-10-16T10:00:00+08:00',
+      last_update: '',
+      last_error: '',
+    })
+    expect(JSON.stringify(res)).not.toContain(GITHUB_TOKEN)
+  })
+
+  it('gitea 回非 2xx：报错带状态码与 gitea 的 message，token 换成 ***', async () => {
+    const h = harness({ token: 'gitea-tok', 'github-token': GITHUB_TOKEN })
+    apply(h.ctx)
+    stubGiteaReply(400, { message: `remote address ${GITHUB_TOKEN} is invalid` })
+    const res = (await h.handlers.get('gitea.push-mirror.add')!({ repo: 'godcreator/gwb-gitea', github: 'godcreator02/gwb-gitea' })) as CommandResult
+    expect(res.ok).toBe(false)
+    expect(res.error).toContain('400')
+    expect(res.error).toContain('is invalid')
+    expect(res.error).not.toContain(GITHUB_TOKEN)
+    expect(res.error).toContain('***')
+  })
+
+  it('没发出去：报错里的 GitHub token 也换成 ***', async () => {
+    const h = harness({ token: 'gitea-tok', 'github-token': GITHUB_TOKEN })
+    apply(h.ctx)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError(`fetch failed: ${GITHUB_TOKEN}`)
+      }),
+    )
+    const res = (await h.handlers.get('gitea.push-mirror.add')!({ repo: 'godcreator/gwb-gitea', github: 'godcreator02/gwb-gitea' })) as CommandResult
+    expect(res.ok).toBe(false)
+    expect(res.error).toContain('没发出去')
+    expect(res.error).not.toContain(GITHUB_TOKEN)
   })
 })
 

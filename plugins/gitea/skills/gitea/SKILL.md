@@ -1,12 +1,14 @@
 ---
 name: gitea
-description: 要对 gitea 发 API 调用时读——建仓（个人名下或组织里）、发 release、传产物、列仓、查 npm 包、团队与成员、分支保护、开 issue 与留言、合并请求的合并。讲 gitea.http 的参数形状、回执怎么读、token 勾哪些权限、常用调用的写法与状态码读法。具体做法全在这份说明书里，插件只负责把请求发出去，没有第二条专用命令。
+description: 要对 gitea 发 API 调用时读——建仓（个人名下或组织里）、发 release、传产物、列仓、查 npm 包、团队与成员、分支保护、开 issue 与留言、合并请求的合并、开推送镜像同步到 GitHub。讲 gitea.http 的参数形状、回执怎么读、token 勾哪些权限、常用调用的写法与状态码读法，以及 gitea.push-mirror.add 怎么用。
 ---
 
 # 用 gitea.http 调 gitea API
 
-这个插件只有一条命令 `gitea.http`，能发任意 gitea REST API 调用：你（agent）按 gitea 的 API 文档拼好调用，
+这个插件的主命令是 `gitea.http`，能发任意 gitea REST API 调用：你（agent）按 gitea 的 API 文档拼好调用，
 它负责补 `/api/v1` 前缀、带上 token、发请求、整理回执。**没有**建仓命令、发版命令——那些是下面的调用写法，不是代码。
+另一条命令 `gitea.push-mirror.add` 只用来开推送镜像：它要把 GitHub token 交给 gitea，token 只能从设置里取、不能经你的参数，
+所以单独成一条命令，见「开推送镜像」一节。
 
 ## 先配 token（只做一次）
 
@@ -31,7 +33,7 @@ description: 要对 gitea 发 API 调用时读——建仓（个人名下或组�
    `status: 200`，body 里是 token 所属账号的登录名
 
 `gitea.base-url` 设置项默认 `https://git.tianshen02.online:28377`，换实例才改它。换实例时一起改 `gitea.push-url`：
-那台 gitea 旁边的推送服务 ntfy 的地址（默认 `https://ntfy.tianshen02.online:28377`），gwb-collab 订阅它来马上知道 gitea 上的事件。
+和那台 gitea 在同一台机器上的推送服务 ntfy 的地址（默认 `https://ntfy.tianshen02.online:28377`），gwb-collab 订阅它来马上知道 gitea 上的事件。
 
 ## 命令形状
 
@@ -166,6 +168,41 @@ gitea.http { "method": "POST", "path": "/repos/{owner}/{repo}/pulls/{number}/mer
 
 合并请求的留言走 `issues/{number}/comments`，编号和合并请求是同一个。`Do` 写合并方式（`merge`、`fast-forward-only` 等），
 仓库没开的方式回 405。合并、留言都会以 token 所属账号的名义出现在网页上：替人做之前先问清楚。
+
+## 开推送镜像
+
+gitea 是主仓；公开的仓由 gitea 的推送镜像同步到 GitHub `godcreator02` 名下的同名公开仓。gitea 推到 GitHub 要一个 GitHub token，
+这个 token 你不经手：命令参数、回执、日志里都没有它。
+
+1. **让用户填 GitHub token**。先查 `credentials.status { "section": "gitea", "key": "github-token" }`，`isSet: false` 就请用户
+   在 GitHub 上生成 token，再到工作台设置界面 gitea 分区的「GitHub token（推送镜像用）」（`gitea.github-token`）里手动填。
+   权限二选一：fine-grained token，仓库范围只选 `godcreator02` 名下要镜像的仓，权限 Contents 读写；或经典 token 勾 `repo`。
+   fine-grained token 只选了部分仓的，以后新加镜像的仓要回 GitHub 上把它加进这个 token 的范围
+2. **在 GitHub 上建好同名空仓**（网页上建，公开）。推送镜像不建仓，GitHub 上没有这个仓同步会失败
+3. **把最新代码推到 gitea**。镜像是整仓覆盖：GitHub 上的同名分支与 tag 被 gitea 的覆盖，GitHub 上有而 gitea 上没有的分支与 tag
+   被删掉。开之前确认 gitea 上的分支与 tag 是全的、最新的，GitHub 上只在那边有的提交会丢
+4. **开镜像**：
+
+   ```
+   gitea.push-mirror.add { "repo": "godcreator/gwb-gitea", "github": "godcreator02/gwb-gitea" }
+   ```
+
+   `repo` 是 gitea 上的 owner/name，`github` 是 GitHub 上的 owner/name，都必填、不收别的参数。gitea token 要有这个仓的管理权限。
+   镜像每 8 小时同步一次，gitea 上每次推送后也同步。回执是 gitea 记下的镜像信息：
+   `{ repo_name, remote_name, remote_address, interval, sync_on_commit, created, last_update, last_error }`，不含 token。
+   GitHub token 没配、参数不对直接报错；gitea 回非 2xx 也报错，带状态码与 gitea 的 message
+
+查看、手动同步、删除镜像用 `gitea.http`（`{name}` 是回执里的 `remote_name`）：
+
+```
+gitea.http { "method": "GET", "path": "/repos/{owner}/{repo}/push_mirrors" }               // 各镜像的 last_update、last_error
+gitea.http { "method": "POST", "path": "/repos/{owner}/{repo}/push_mirrors-sync" }          // 马上同步一次
+gitea.http { "method": "DELETE", "path": "/repos/{owner}/{repo}/push_mirrors/{name}" }      // 删掉这条镜像，GitHub 上的仓不动
+```
+
+开完先手动同步一次，再 `GET` 看 `last_error` 为空、`last_update` 有时间，GitHub 仓页面上能看到最新提交才算成。
+`last_error` 里有 `403` 或 `Authentication failed`，是 GitHub token 的权限或仓库范围不够，让用户重新生成后在设置界面改填；
+同一个仓重复开会多出一条镜像，先 `GET` 看有没有再开。
 
 ## 状态码读法
 

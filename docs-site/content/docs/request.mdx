@@ -7,12 +7,14 @@ description: gitea.http 收到参数之后依次做了什么：检查参数、�
 
 ## 代码分在哪些文件
 
-{/* tree dir="../plugins/gitea/src" depth="1" hash="6424d24b1f0d" */}
+{/* tree dir="../plugins/gitea/src" depth="1" hash="3e0bc2df438c" */}
 
 `core.ts` 放不碰网络、不读磁盘、不读设置的纯函数：参数检查、URL 拼接、回执整理、脱敏，给输入看输出，测试在
 `tests/core.test.ts`。`index.ts` 登记命令与设置，处理函数在这里读设置、读文件、发请求。依赖只有一个方向：
 `index.ts` 引 `core.ts`，`core.ts` 只引 `vocab.ts` 里的 `isRecord`。
 `service.ts` 是给别的插件 inject 的服务 `gwbGitea`，自己不发请求：`index.ts` 把发送函数交给它，命令和服务走的是同一个。
+`push-mirror.ts` 是命令 `gitea.push-mirror.add` 的纯函数：检查参数、拼出发给 gitea 的请求、从 gitea 的回应里挑回执字段，引 `core.ts` 与 `vocab.ts`；
+它的处理函数也在 `index.ts`，最后同样交给发送函数，见本页最后一节。
 
 {/* ref file="../plugins/gitea/src/core.ts" lines="1-1" hash="4747612b10de" blob="fc2fe60ce1ee" */}
 
@@ -54,7 +56,7 @@ path 去掉开头的斜杠，调用方多写了 `api/v1/` 也剥掉（例子里�
 
 设置里有 token 就加头 `authorization: token <token>`，没有就不加。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="52-67" hash="c6e12bbbb5de" blob="81adbfb43f71" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="60-75" hash="c6e12bbbb5de" blob="0849a65c26fe" */}
 
 ## 4. 发出
 
@@ -76,14 +78,39 @@ path 去掉开头的斜杠，调用方多写了 `api/v1/` 也剥掉（例子里�
 gitea 回了话，状态码怎么解释由调用方决定。日志同时记一行：method、path（不含 query）、状态码，截断了再注明一句；
 token 与请求体都不进日志。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="86-91" hash="0abc7df82136" blob="81adbfb43f71" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="94-99" hash="0abc7df82136" blob="0849a65c26fe" */}
 
 ## 6. 没发出去
 
 网络不通、地址错、超时、文件读不到，都在处理函数的 `catch` 里变成 `{ ok: false, error }`。报错文字带上异常的调用栈，
 先经 `redact` 把 token 的每次出现换成 `***`，再附上检查方向：网络、`gitea.base-url` 当前的值、`gitea.token`、`file.path`。
 
-{/* ref file="../plugins/gitea/src/index.ts" lines="92-98" hash="04540c1ba390" blob="81adbfb43f71" */}
+{/* ref file="../plugins/gitea/src/index.ts" lines="100-106" hash="04540c1ba390" blob="0849a65c26fe" */}
 
-`redact` 只用在这里。gitea 正常返回的 body 原样交回，插件不在里面找 token：token 只在请求头里发出，
+在 `gitea.http` 里 `redact` 只用在这里。gitea 正常返回的 body 原样交回，插件不在里面找 token：token 只在请求头里发出，
 gitea 的回应不会把它带回来。调用方自己把 token 写进 path、query 或 body 的，插件不替它遮掉。
+
+## 推送镜像：gitea.push-mirror.add
+
+开推送镜像要把 GitHub token 放进发给 gitea 的 body。这个 token 只由用户在设置界面填进 `gitea.github-token`，
+agent 的参数里不能有它，所以开镜像是一条单独的命令，不是一次 `gitea.http` 调用。它和 `gitea.http` 的不同都在发送前后，中间仍是同一个发送函数：
+
+1. **检查参数**。只收 `repo` 与 `github` 两个参数，都要写成 `owner/name`；缺了、格式不对、多了认不出的参数都直接报错，不发请求
+
+{/* ref file="../plugins/gitea/src/push-mirror.ts" lines="51-60" hash="56258f2a9751" blob="46ec768c6174" */}
+
+2. **读 GitHub token**。设置里没有就报错，写明请用户去设置界面填哪一项，不发请求
+
+{/* ref file="../plugins/gitea/src/index.ts" lines="165-179" hash="13d620551ab8" blob="0849a65c26fe" */}
+3. **拼请求**。`POST repos/<repo>/push_mirrors`，body 里写 GitHub 仓的地址、用户名（GitHub 只认 token，用户名写仓的 owner）、token、
+   同步间隔 8 小时、gitea 上每次推送后也同步。请求照常带 gitea token 的请求头，所以 gitea token 要有这个仓的管理权限
+
+{/* ref file="../plugins/gitea/src/push-mirror.ts" lines="63-76" hash="da239b9c05d5" blob="46ec768c6174" */}
+
+4. **读回应**。`gitea.http` 把 4xx、5xx 照样交回；这条命令把非 2xx 当成失败，报错带状态码与 gitea 的 `message`。
+   2xx 时不交回整个 body，只挑白名单里的字段，字符串值里出现的 GitHub token 换成 `***`，报错文字也一样。
+   gitea 的回应本不带密码，白名单与替换保证即使它带了，token 也不会出现在回执里
+
+{/* ref file="../plugins/gitea/src/push-mirror.ts" lines="78-94" hash="500ca64b2b82" blob="46ec768c6174" */}
+
+日志仍只有发送函数记的那一行：method、path、状态码，body 不进日志。
