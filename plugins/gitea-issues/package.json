@@ -1,6 +1,6 @@
 {
   "name": "@godcreator/gwb-gitea-issues",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "gitea issue 窗格：列出设置里几个 owner 名下各仓开着的 issue、看正文与评论；后台定时查新 issue 与新评论，装着 qq-bot 就经 gwbQqBot 私聊主人",
   "license": "MIT",
   "type": "module",
@@ -35,7 +35,7 @@
     "@godcreator/gwb-data": "^0.1.12",
     "@godcreator/gwb-gitea": "^0.1.17",
     "@godcreator/gwb-kernel-desktop": "^0.10.1",
-    "@godcreator/gwb-qq-bot": "^0.7.0",
+    "@godcreator/gwb-qq-bot": "^0.8.0",
     "@godcreator/gwb-settings": "^0.4.0",
     "@godcreator/gwb-shell": "^0.15.11"
   },
