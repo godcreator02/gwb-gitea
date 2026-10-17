@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, type ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { groupByRepo, issueKey, KIND_LABEL, type IssueDetail, type IssueRow } from '../core.js'
+import { groupByRepo, issueKey, KIND_LABEL, SOURCE_LABEL, type IssueDetail, type IssueRow } from '../core.js'
 import { formatTime, OPEN_IN_GITEA_TARGET, REFRESH_VARIANT } from './labels.js'
 
 async function listIssues(host: HostBridge): Promise<IssueRow[]> {
@@ -14,7 +14,7 @@ async function listIssues(host: HostBridge): Promise<IssueRow[]> {
 }
 
 async function readDetail(host: HostBridge, issue: IssueRow): Promise<IssueDetail> {
-  const reply = (await host.call('gitea-issues.detail', { repo: issue.repo, number: issue.number })) as GwbResult<IssueDetail>
+  const reply = (await host.call('gitea-issues.detail', { source: issue.source, repo: issue.repo, number: issue.number })) as GwbResult<IssueDetail>
   if (!reply.ok || reply.data === undefined) throw new Error(`gitea-issues.detail 没成功：${reply.error ?? '回执没写原因'}`)
   return reply.data
 }
@@ -31,8 +31,9 @@ function IssueList({ issues, selectedKey, onSelect }: {
   return (
     <div className="giteaissues:space-y-4 giteaissues:p-3">
       {groupByRepo(issues).map((group) => (
-        <section key={group.repo} className="giteaissues:space-y-1">
+        <section key={`${group.source}:${group.repo}`} className="giteaissues:space-y-1">
           <div className="giteaissues:flex giteaissues:items-center giteaissues:gap-2 giteaissues:px-2">
+            <Badge variant="secondary">{SOURCE_LABEL[group.source]}</Badge>
             <span className="giteaissues:truncate giteaissues:text-sm giteaissues:font-semibold">{group.repo}</span>
             <Badge variant="secondary">{group.issues.length}</Badge>
           </div>
@@ -65,7 +66,7 @@ function IssueView({ detail }: { detail: IssueDetail }): ReactElement {
           <span>{detail.repo} #{detail.number}</span>
           <span>{detail.author} 开于 {formatTime(detail.createdAt)}</span>
           <Button variant="link" asChild>
-            <a href={detail.url} target={OPEN_IN_GITEA_TARGET} rel="noreferrer">在 gitea 打开</a>
+            <a href={detail.url} target={OPEN_IN_GITEA_TARGET} rel="noreferrer">在 {SOURCE_LABEL[detail.source]} 打开</a>
           </Button>
         </div>
       </header>

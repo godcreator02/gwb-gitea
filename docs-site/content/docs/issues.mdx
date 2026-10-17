@@ -1,67 +1,116 @@
 ---
 title: gwb-gitea-issues
-description: 本仓第二个插件：窗格列出几个 owner 名下开着的 issue 与合并请求，后台定时查新内容、装着 qq-bot 就私聊到 QQ；它做什么、提供什么、依赖谁、不做什么
+description: 本仓第二个插件：窗格列出 gitea 与 GitHub 上几个 owner 名下开着的 issue 与合并请求，后台定时查变化、装着 qq-bot 就按 markdown 私聊到 QQ；它做什么、提供什么、依赖谁、不做什么
 ---
 
-**本页回答**：`@godcreator/gwb-gitea-issues` 做什么、对外提供哪些接口、依赖谁、刻意不做什么。
+**本页回答**：`@godcreator/gwb-gitea-issues` 做什么、怎么认出变化、推到 QQ 的通知长什么样、对外提供哪些接口、依赖谁、刻意不做什么。
 
 ## 做什么
 
 gwb 生态里一个仓给另一个仓的反馈，是在收件仓的 gitea 上开一条 issue（写法在 docfirst 插件的说明书 `docs-site`）。
-这个插件把这些 issue 和合并请求集中起来看：
+公开的仓另有推送镜像出去的 GitHub 同名仓，外人可能在那边开 issue，所以两边都看。这个插件把两边的 issue 和合并请求集中起来：
 
-- **窗格「issue 与合并请求」**：列出设置 `owners` 里每个 owner 名下各仓开着的 issue 与合并请求，按仓分组、最近更新的在前；
-  点一条看正文与全部评论，能跳到 gitea 网页
-- **后台定时查新内容**：每隔 `poll-minutes` 分钟查一遍，跟上次看到的比，算出新开的和评论变多的；装着 qq-bot
-  （服务 `gwbQqBot` 注入进来了），就把每一条经 `gwbQqBot.notify` 私聊主人，没有单独的开关
+- **窗格「issue 与合并请求」**：列出设置 `owners`（gitea）与 `github-owners`（GitHub）里每个 owner 名下各仓开着的 issue 与合并请求，
+  按「来源 + 仓」分组、组名前标着 gitea 或 GitHub、最近更新的在前；点一条看正文与全部评论，能跳到原网页
+- **后台定时查变化**：每隔 `poll-minutes` 分钟查一遍，跟上次看到的比，认出新开、重新打开、新评论、关闭、合并五种变化；装着 qq-bot
+  （服务 `gwbQqBot` 注入进来了），就把每一条按 markdown 写好、经 `gwbQqBot.notify` 私聊主人，没有单独的开关
 
-gitea 里合并请求也是一条 issue，编号与评论接口共用，回执里 `pull_request` 不为空的就是合并请求：
+两边的合并请求都是一条 issue，编号与评论接口共用，回执里 `pull_request` 不为空的就是合并请求：
 
-{/* ref file="../plugins/gitea-issues/src/core.ts" lines="1-2" hash="46fd33174e87" blob="85df9363d924" */}
+{/* ref file="../plugins/gitea-issues/src/core.ts" lines="6-7" hash="482324bac803" blob="b6e8dc2bdf3f" */}
 
-搜索接口按 `type` 分开列，所以每个 owner 的 issue 与合并请求各查一遍。`gwbGitea.http` 的回执超过 64KB 会截断，
+## 两边怎么查
+
+**gitea** 经 `gwbGitea.http` 调搜索接口，按 `type` 分开列，每个 owner 的 issue 与合并请求各查一遍。`gwbGitea.http` 的回执超过 64KB 会截断，
 带正文的一条就有几 KB，所以一页只取 5 条、取到不满一页为止：
 
-{/* ref file="../plugins/gitea-issues/src/index.ts" lines="174-191" hash="8ca6f9d508f3" blob="72de1ba3882c" */}
+{/* ref file="../plugins/gitea-issues/src/index.ts" lines="232-247" hash="309fde975c8b" blob="b29f953e24f3" */}
 
-## 怎么算「新」
+**GitHub** 不带 token，直接 `fetch` `https://api.github.com`，只看得到公开仓（镜像仓都是公开的）。搜索接口要求写明 `is:issue` 或 `is:pr`，
+所以每个 owner 每轮搜两次，每页 100 条。不带 token 的限额是搜索每分钟 10 次、别的接口每小时 60 次，读单条只在有变化时做，远在限额以内；
+限额用完回 403 或 429 时报错，写明几点恢复。搜索回执说这次没搜完（`incomplete_results`）也算这一轮查不通：
 
-上次看到的状态是一张表：每条开着的 issue 或合并请求记它的评论数，存在本插件数据目录的 `seen.json`。这一次查到的里面，
-表里没有的编号算新开的，评论数比表里多的算有新评论；关掉的不再记。没有 `seen.json` 就是第一次查：只记下现状、不算变化，
-所以刚装上不会把已有的全推一遍。
+{/* ref file="../plugins/gitea-issues/src/github.ts" lines="42-59" hash="c7b62d6c3d87" blob="ef1569dc3a83" */}
 
-{/* ref file="../plugins/gitea-issues/src/core.ts" lines="112-128" hash="c6d95c2d18b0" blob="85df9363d924" */}
+## 怎么认出变化
 
-通知的 id 带上评论数，同一条变化 qq-bot 只发一次，再来一条评论就是新的一条：
+上次看到的状态存在本插件数据目录的 `seen-state.json`，**按 owner 分开记**：键是「来源:owner」，值是那一次开始查的时间 `polledAt`，
+和当时每条开着的 issue 或合并请求的评论数。一个 owner 在记录里没有，就是第一次看它：只记下现状、不算变化，所以刚装上、刚往设置里加 owner，
+都不会把已有的全推一遍。
 
-{/* ref file="../plugins/gitea-issues/src/core.ts" lines="130-133" hash="fbfafb855ab5" blob="85df9363d924" */}
+| 变化 | 怎么认出来 | 通知第一行 |
+| --- | --- | --- |
+| 新开 | 上次没有这一条，创建时间晚于上次的 `polledAt` | `**新 issue**` 或 `**新合并请求**` |
+| 重新打开 | 上次没有这一条，创建时间早于上次的 `polledAt` | `**重新打开**` |
+| 新评论 | 评论数比上次多 | `**新评论**` |
+| 已关闭 | 上次有、这次不在列表里，读那一条是 `closed` | `**已关闭**` |
+| 已合并 | 同上，读出来是合并进去了的合并请求 | `**已合并**` |
 
-qq-bot 在不在，每一轮都把这次的状态写回 `seen.json`（不在的那几轮里的变化之后不再补推）；推送中途报错（比如 qq-bot 没配主人）就不写回，下一轮再推同一批，
-qq-bot 按 id 去掉已经发出去的那几条：
+{/* ref file="../plugins/gitea-issues/src/core.ts" lines="177-199" hash="824ac4fa6300" blob="b6e8dc2bdf3f" */}
 
-{/* ref file="../plugins/gitea-issues/src/index.ts" lines="67-80" hash="8f55bdb32cc5" blob="72de1ba3882c" */}
+「这次不在列表里」不一定是关了：也可能删了、转到别的仓。所以要读一次那一条再定，读到还开着（转走的，GitHub 跳转后回的是新仓里那一条）
+或读不到（删了）都不推。合并请求关掉时合进去了算合并：gitea 看 `pull_request.merged`，GitHub 看 `pull_request.merged_at` 不为空。
+
+**每个 owner 各查各的**。一个 owner 查不通（比如 GitHub 限额用完），这一轮沿用它上次的记录、不算变化，别的 owner 照常推；
+所有 owner 查完再把查不通的写进 `gitea-issues.status` 的 `lastError`：
+
+{/* ref file="../plugins/gitea-issues/src/index.ts" lines="108-127" hash="b3bc0e1cc3fb" blob="b29f953e24f3" */}
+
+通知的 id 带上来源、仓、编号、变化和一个标记，同一条变化 qq-bot 只发一次：新评论的标记是评论数（再来一条评论就是新的一条），
+新开的是创建时间，重新打开、关闭、合并的是更新时间（同一条关了又开、开了又关，每次都是新的一条）：
+
+{/* ref file="../plugins/gitea-issues/src/core.ts" lines="201-208" hash="c3da2a3c2cd7" blob="b6e8dc2bdf3f" */}
+
+qq-bot 在不在，每一轮都把这次的状态写回 `seen-state.json`（不在的那几轮里的变化之后不再补推）；推送中途报错（比如 qq-bot 没配主人）就不写回，
+下一轮再推同一批，qq-bot 按 id 去掉已经发出去的那几条。
+
+## 通知长什么样
+
+qq-bot 把正文按 markdown 发，所以通知照原文的排版写，不压成一行。一条新 issue 的正文是这样（第三行起是 issue 原文）：
+
+```md
+**新 issue** · GitHub · godcreator02/gwb-gitea #1
+### 要跟 gwb-qq-bot 0.8
+godcreator02 · 10-15 22:49
+
+`@godcreator/gwb-qq-bot` 发 0.8.0（破坏性版本）。……
+
+## 要做的
+
+gitea-issues 只用 `notify`，代码不用改：……
+```
+
+- 第一行是变化、来源、仓与编号；合并请求的重新打开、新评论、关闭在编号后加「（合并请求）」。第二行是标题
+- 新开的接着写作者、时间和原文；新评论只写上次之后的那几条，每条是加粗的作者与时间、空一行、原文，条与条之间用 `---` 隔开；
+  重新打开、关闭、合并只写一行「更新于」
+- 上限 5000 字，与 `gwbQqBot.notify` 一致。超了就截断，末尾写「……（太长，后面的到窗格里看）」；截在代码块中间时补上收尾的三个反引号，
+  不然后面的字全按代码显示
+
+{/* ref file="../plugins/gitea-issues/src/core.ts" lines="249-261" hash="38e222e76ec7" blob="b6e8dc2bdf3f" */}
 
 ## 接口
 
 | 类别 | 名字 | 要点 |
 | --- | --- | --- |
-| 命令 | `gitea-issues.list` | 无参数，现查 gitea，回开着的 issue 与合并请求 |
-| 命令 | `gitea-issues.detail` | `{ repo, number }`，回正文与全部评论；合并请求的代码审阅意见不在里面 |
-| 命令 | `gitea-issues.status` | 后台上次查的时间与结果、推出去几条、qq-bot 在不在 |
+| 命令 | `gitea-issues.list` | 无参数，现查两边，回开着的 issue 与合并请求，每行带 `source`（`gitea` / `github`）；哪一边查不通整条报错 |
+| 命令 | `gitea-issues.detail` | `{ source, repo, number }`，回正文、全部评论与 `state`（`open` / `closed` / `merged`）；合并请求的代码审阅意见不在里面 |
+| 命令 | `gitea-issues.status` | 后台上次查的时间、哪几个 owner 没查通、推出去几条、qq-bot 在不在 |
 | 窗格 | `issues` | 工具窗格「issue 与合并请求」 |
-| 设置 | `gitea-issues.owners` | 字符串列表，缺省 `godcreator`、`god-private` |
+| 设置 | `gitea-issues.owners` | gitea 上的 owner，字符串列表，缺省 `godcreator`、`god-private` |
+| 设置 | `gitea-issues.github-owners` | GitHub 上的 owner，字符串列表，缺省 `godcreator02`；清空就不看 GitHub |
 | 设置 | `gitea-issues.poll-minutes` | 数字，缺省 5，最少 1 |
 
-三条命令都标 `effect: 'read'`：只读 gitea，不改本机也不打扰人。
+三条命令都标 `effect: 'read'`：只读 gitea 与 GitHub，不改本机也不打扰人。
 
 ## 依赖
 
 必需注入命令总线、设置、数据目录、gwb-gitea 的服务 `gwbGitea` 与定时器；外壳与 qq-bot 是局部注入，没装外壳就没有窗格，
-没装 qq-bot 就只是不推送。各服务的 peer 写法见[插件之间怎么连](/docs/wiring)。
+没装 qq-bot 就只是不推送。GitHub 不经任何插件，直接 `fetch`。各服务的 peer 写法见[插件之间怎么连](/docs/wiring)。
 
 ## 不做的事
 
-- **不写 gitea**：不开 issue、不评论、不关闭、不合并。开 issue 是 agent 经 `gitea.http` 做的，写法在说明书 `docs-site`
-- **不管协作站项目的组织**：那些组织里的 issue 与合并请求由 gwb-collab 的提示栏与 QQ 通知管，`owners` 缺省不含它们
+- **不写两边**：不开 issue、不评论、不关闭、不合并。开 issue 是 agent 经 `gitea.http` 做的，写法在说明书 `docs-site`
+- **不读 GitHub 私有仓**：不带 token，只看公开仓
+- **不管协作站项目的组织**：那些组织里的 issue 与合并请求由 gwb-collab 的提示栏管，`owners` 缺省不含它们
 - **不推送链接**：QQ 会过滤没在开放平台报备的域名，通知里只写仓名与编号
-- **不渲染 Markdown**：正文与评论按原文显示，要看排版点「在 gitea 打开」
+- **窗格不渲染 Markdown**：窗格里的正文与评论按原文显示，要看排版点「在 gitea 打开」或「在 GitHub 打开」；QQ 通知是按 markdown 发的

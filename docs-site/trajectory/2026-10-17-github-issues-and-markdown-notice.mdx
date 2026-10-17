@@ -1,0 +1,34 @@
+---
+born-at: 2026-10-17T15:40
+type: choice
+parent: [2026-09-15-gwb-gitea]
+label: 两边的 issue 一起看、按 markdown 推送
+domain: gwb-gitea-issues
+---
+
+## 背景
+
+用户要一处看到 gitea 与 GitHub 两边的 issue，并从 QQ 按 markdown 推给他看。0.2 只查 gitea；通知正文把换行与空白压成一个空格、截到 600 字，
+而 qq-bot 0.7.9 起已经按 markdown 发、0.7.10 起 `notify` 的上限是 5000 字，这边没跟上。公开仓由 gitea 推送镜像到 GitHub `godcreator02` 名下，
+镜像只同步代码不同步 issue，那边的 issue 功能开着，外人开的没人看得到。
+
+10-15 一度改成 GitHub 为主，那时把 gitea 上开着的 issue 复制了一份到 GitHub（31 条，作者都是 godcreator02）；10-16 改回 gitea 为主，副本还开着。
+
+## 考虑过的方案
+
+- **GitHub 带 token 读**：要用户再生成一个有 issue 读权限的 token（设置里那把 `gitea.github-token` 只有推送镜像要的权限），能读私有仓
+- **GitHub 不带 token 读**：搜索接口每个 owner 每轮两次（`is:issue`、`is:pr` 各一次），远在每分钟 10 次的限额以内；只看得到公开仓，镜像仓都是公开的
+- **两边的副本去重**：按标题对上合并显示。用户定以 gitea 为准、把 GitHub 上的副本关掉，就不用做
+
+## 结论与边界
+
+采用不带 token 读 GitHub，新设置 `github-owners`（缺省 `godcreator02`）。协作站项目组织的 issue 仍归 gwb-collab，不收进来（用户定）。
+
+- **加推关闭与合并**：上次有、这次不在列表里的，读一次那一条再定，免得把删掉、转走、从设置里拿掉的 owner 当成关闭
+- **新开与重新打开**用创建时间对比上次开始查的时间来分
+- **记录按 owner 分开记**，第一次出现的 owner 只记现状不推：加一个 owner 不会把它名下已有的全推一遍；一个 owner 查不通只沿用它的旧记录，不挡别的 owner
+- **通知照原文排版写**，上限跟 `notify` 一样是 5000 字，截在代码块中间补上收尾的三个反引号；仍然不写链接
+- 记录文件从 `seen.json` 换成 `seen-state.json`，升级后第一轮当成第一次看：中间的变化最多丢一轮（几分钟），不写迁移
+- `gitea-issues.detail` 加必填参数 `source`、记录文件格式变了，按契约清单升 x：0.3.0；容器里没有别的包依赖它
+
+GitHub 上那 31 条副本要在 default 装上 0.3.0 之前关掉：装上之后再关，每条都会推一条「已关闭」。

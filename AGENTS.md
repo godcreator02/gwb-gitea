@@ -19,8 +19,8 @@ pnpm workspace：仓根是不发布的 private 包，文档站在 `docs-site/`�
   另一条命令 `gitea.push-mirror.add` 开推送镜像，纯函数在 `src/push-mirror.ts`：GitHub token 只能从设置 `gitea.github-token` 取、不经 agent，所以单独成命令。
   别的插件不调这条命令，注入服务 `gwbGitea`（`plugins/gitea/src/service.ts`），它和命令走同一个发送函数。
   纯逻辑在 `src/core.ts`，真正发出请求只在 `src/index.ts` 的发送函数里
-- `plugins/gitea-issues/`：`@godcreator/gwb-gitea-issues`，窗格列出开着的 issue 与合并请求，后台定时查新内容、推送到 QQ。
-  访问 gitea 只经 `gwbGitea.http`；纯逻辑在 `src/core.ts`，窗格在 `src/client/`
+- `plugins/gitea-issues/`：`@godcreator/gwb-gitea-issues`，窗格列出 gitea 与 GitHub 上开着的 issue 与合并请求，后台定时查变化、按 markdown 推送到 QQ。
+  访问 gitea 只经 `gwbGitea.http`，GitHub 不带 token 直接读（`src/github.ts`）；纯逻辑在 `src/core.ts`，窗格在 `src/client/`
 
 ## 怎么运行
 
