@@ -1,0 +1,9 @@
+/* 接缝图选中时的强调色 */
+:root {
+  --gitea-seam-accent: #c2410c;
+  --gitea-seam-accent-soft: color-mix(in srgb, #c2410c 12%, transparent);
+}
+.dark {
+  --gitea-seam-accent: #fb923c;
+  --gitea-seam-accent-soft: color-mix(in srgb, #fb923c 16%, transparent);
+}

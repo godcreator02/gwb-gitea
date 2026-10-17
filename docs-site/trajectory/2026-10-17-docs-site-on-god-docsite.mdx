@@ -1,0 +1,32 @@
+---
+born-at: 2026-10-17T10:45
+type: choice
+parent: [2026-09-15-gwb-gitea]
+label: 文档站迁到 god-docsite
+domain: 文档站
+---
+
+## 背景
+
+docs-site 原来是 Next 16 + `@godcreator/docfirst-workflow` 0.5.2：页面路由、搜索、llms 文本、星轨盘都是站里手写的 Next 文件（`src/app/`），
+组件名册由 `src/components/registry.ts` 与 `scripts/verify-roster.mjs` 两边核对，看页面要先 `pnpm build` 再 `pnpm start`（端口 4326）。
+平台换成了 `@godcreator/god-docsite`（fumadocs + React Router + Vite）加功能包 code-pin、trajectory、explainer，命令行换成 `@godcreator/docfirst` 0.1.0，
+开发服务由工作台的 `docsite.site.*` 托管。照 god-docsite 维护页「Next docfirst 站迁到平台」迁过来，先例是 gwb-vscode 的同一次迁移。
+
+## 结论与边界
+
+- 骨架用 `docfirst.create` 在 `D:\gwb-docfirst-migrate\gwb-gitea\docs-site` 生成，`app/` 与根配置、身份文件 `docsite.json`、`people.json`、`glossary.json`、`comments/` 整份换进 docs-site；
+  `package.json` 的依赖与脚本照骨架，名字、版本、描述保留
+- 轨迹卡从 `content/trajectory/` 挪到站点根 `trajectory/`，旧的 `meta.json` 删掉；`content/meta.json` 写站名，docs、future 两区加 `title` 与 `"root": true`
+- 接缝图 `GiteaSeams` 从 `src/components/` 挪到首页的同名文件夹 `content/docs/index/`，首页开头 import 它。
+  它的画面数据与机读文字都没有单独的 `.data.mjs`（机读文字写在 `docfirst.config.mjs` 里），不用补 `.d.mts`
+- 接缝图选中时的强调色 `--gitea-seam-accent` 原来定义在旧站的 `src/app/global.css`，随 Next 文件一起删了；挪成组件旁的 `gitea-seams.css`，由组件自己 import，深色主题另给一套
+- `docfirst.config.mjs` 改成 `fumadocsRoster: true`、`trajectory: 'trajectory'`、名册加 `Term`，接缝图的机读规则与 SKILL.md 的映射照旧
+- 生成物：随包的 SKILL.md 没有变（原文的列表本来就是 `-`、没有空表格格子）；AGENTS / README 正本里「build + start 看 4326 端口」改成由工作台托管开发服务，
+  AGENTS 里说明书所属的插件从已不存在的 `gwb-docfirst-workflow` 改成 `gwb-docsite`。正本里的网址本来都在反引号里，doc-export 0.1.0 的裸网址问题没有碰到
+- `pnpm doc` 全绿，`pnpm typecheck`、`pnpm build` 通过，`docsite.site.start` 后首页、各区页面、卡页、`/llms.txt` 都是 200
+
+## 代价与遗留
+
+`content/docs/meta.json` 的 `pages` 里还写着 `plugin`、`system-map` 两页，目录里早就没有这两个文件，迁移前后都不报错，没有顺手删。
+没有术语表页，`glossary.json` 是空的，正文里没有术语标注。

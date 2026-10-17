@@ -2,7 +2,7 @@
 
 **本页回答**：在这个仓干活的 agent 先看什么、怎么运行、提交前要过哪些检查、什么不能做。
 
-文档怎么写、分区，读随 `@godcreator/gwb-docfirst-workflow` 插件发布的说明书「docs-writing」；钉码怎么核对、确认，读同一插件的「docs-site」；
+文档怎么写、分区，读随 `@godcreator/gwb-docsite` 插件发布的说明书「docs-writing」；钉码怎么核对、确认，读同一插件的「docs-site」；
 写插件、在隔离 home 里验证读「gwb-devkit」；升版本号、发版读「gwb-release」。这一页只写本仓专属的。
 
 ## 先读
@@ -12,7 +12,7 @@
 
 ## 这个仓的结构
 
-pnpm workspace：仓根是不发布的 private 包，文档站在 `docs-site/`（自己一套依赖，不进 workspace）。两个插件各自发版：
+pnpm workspace：仓根是不发布的 private 包，文档站在 `docs-site/`（god-docsite + docfirst，自己一套依赖，不进 workspace）。两个插件各自发版：
 
 - `plugins/gitea/`：`@godcreator/gwb-gitea`，只有 node 侧，给 agent 的主命令是 `gitea.http`：各类调用怎么组装、回执怎么读、
   token 怎么配，全写在 `plugins/gitea/skills/gitea/SKILL.md`、随包发布，代码只负责把请求发出去。
@@ -41,6 +41,7 @@ cd docs-site && pnpm doc
 ```
 
 改了被钉的代码，同一个提交里 `pnpm doc:confirm` 写回挪了位置的钉码，剩下的黄灯复核后 `pnpm doc:confirm <页…> --accept`。
+文档站的 `pnpm build` 只作提交前的检查；看页面由工作台托管开发服务：`docsite.site.add {"dir":"<站目录>"}`，地址以 `docsite.site.list` 回的 `url` 为准，不在会话里自己 `pnpm dev`。
 
 ## 不能做的
 

@@ -19,5 +19,5 @@ token 在 gitea 网页上生成，按要调的接口勾仓库、组织、工单�
 ## 仓的结构
 
 pnpm workspace：插件包在 `plugins/gitea/`，仓根 `pnpm install`、`pnpm build`、`pnpm check`。
-`docs-site/` 是文档站：`cd docs-site && pnpm install && pnpm build && pnpm start`，看 `http://localhost:4326`。
+`docs-site/` 是文档站（god-docsite + docfirst），由 gwb 工作台托管开发服务：`docsite.site.add {"dir":"<站目录>"}`，地址看 `docsite.site.list`。
 这份 README 是生成物，正本是 `docs-site/content/docs/outputs/readme.mdx`。
