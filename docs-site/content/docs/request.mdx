@@ -1,6 +1,6 @@
 ---
 title: 一次调用从参数到回执
-description: gitea.http 收到参数之后依次做了什么：检查参数、拼 URL、组装请求体、发出、整理回执；每一步为什么这样做
+description: gitea.http 收到参数之后依次做了什么：检查参数、组成 URL、组装请求体、发出、整理回执；每一步为什么这样做
 ---
 
 **本页回答**：一次 `gitea.http` 调用在插件里经过哪几步、每一步的规则是什么、为什么这样定；代码分在哪些文件。
@@ -13,7 +13,7 @@ description: gitea.http 收到参数之后依次做了什么：检查参数、�
 `tests/core.test.ts`。`index.ts` 登记命令与设置，处理函数在这里读设置、读文件、发请求。依赖只有一个方向：
 `index.ts` 引 `core.ts`，`core.ts` 只引 `vocab.ts` 里的 `isRecord`。
 `service.ts` 是给别的插件 inject 的服务 `gwbGitea`，自己不发请求：`index.ts` 把发送函数交给它，命令和服务走的是同一个。
-`push-mirror.ts` 是命令 `gitea.push-mirror.add` 的纯函数：检查参数、拼出发给 gitea 的请求、从 gitea 的回应里挑回执字段，引 `core.ts` 与 `vocab.ts`；
+`push-mirror.ts` 是命令 `gitea.push-mirror.add` 的纯函数：检查参数、组装发给 gitea 的请求、从 gitea 的回应里挑回执字段，引 `core.ts` 与 `vocab.ts`；
 它的处理函数也在 `index.ts`，最后同样交给发送函数，见本页最后一节。
 
 {/* ref file="../plugins/gitea/src/core.ts" lines="1-1" hash="4747612b10de" blob="fc2fe60ce1ee" */}
@@ -35,15 +35,15 @@ query 的值只能是字符串、数字、布尔；GET、HEAD 不能带 body 或
 
 检查不过的报错文字就是用法：说清哪个参数、要什么、收到了什么。agent 读报错就能改对，不必再去查 `usage`。
 
-## 2. 拼 URL
+## 2. 组成 URL
 
-path 去掉开头的斜杠，调用方多写了 `api/v1/` 也剥掉（例子里剩下 `repos/godcreator/gwb/releases/7/assets`）。
-只剥一次：剥完仍以 `api/v1/` 开头的，是调用方真的要访问这个路径。
+path 去掉开头的斜杠，调用方多写了 `api/v1/` 也去掉（例子里剩下 `repos/godcreator/gwb/releases/7/assets`）。
+只去掉一次：去掉后仍以 `api/v1/` 开头的，是调用方真的要访问这个路径。
 
 {/* ref file="../plugins/gitea/src/core.ts" lines="30-35" hash="77553e37301f" blob="e78ff229a1a8" */}
 
 `base-url` 去掉末尾斜杠，没写协议的按 `https://` 补上，这一条沿用前身 god-gitea 只走 https 的约定。
-然后拼成 `<base-url>/api/v1/<path>`，query 用 `URLSearchParams` 编码接在后面，query 为空时不留问号。
+然后组成 `<base-url>/api/v1/<path>`，query 用 `URLSearchParams` 编码接在后面，query 为空时不留问号。
 
 {/* ref file="../plugins/gitea/src/core.ts" lines="97-101" hash="12448936aef4" blob="e78ff229a1a8" */}
 
@@ -70,7 +70,7 @@ path 去掉开头的斜杠，调用方多写了 `api/v1/` 也剥掉（例子里�
 插件不替调用方翻页：要哪几页、每页多少由调用方决定。截断后的 JSON 解不开，所以截断了一律按文本交回。
 
 没截断时，满足任一条就试着按 JSON 解析：`content-type` 里有 `json`，或者去掉开头空白后第一个字符是 `{` 或 `[`。
-解析失败（半截 JSON、错误页）按文本交回。gitea 的 API 全部返回 JSON，文本这一档留给意外情况。
+解析失败（半截 JSON、错误页）按文本交回。gitea 的 API 全部返回 JSON，按文本交回只用于意外情况。
 
 {/* ref file="../plugins/gitea/src/core.ts" lines="114-131" hash="60c8f4834688" blob="e78ff229a1a8" */}
 
@@ -102,8 +102,8 @@ agent 的参数里不能有它，所以开镜像是一条单独的命令，不�
 2. **读 GitHub token**。设置里没有就报错，写明请用户去设置界面填哪一项，不发请求
 
 {/* ref file="../plugins/gitea/src/index.ts" lines="165-179" hash="13d620551ab8" blob="0849a65c26fe" */}
-3. **拼请求**。`POST repos/<repo>/push_mirrors`，body 里写 GitHub 仓的地址、用户名（GitHub 只认 token，用户名写仓的 owner）、token、
-   同步间隔 8 小时、gitea 上每次推送后也同步。请求照常带 gitea token 的请求头，所以 gitea token 要有这个仓的管理权限
+3. **组装请求**。`POST repos/<repo>/push_mirrors`，body 里写 GitHub 仓的地址、用户名（GitHub 只认 token，用户名写仓的 owner）、token、
+   同步间隔 1 小时、gitea 上每次推送后也同步。请求照常带 gitea token 的请求头，所以 gitea token 要有这个仓的管理权限
 
 {/* ref file="../plugins/gitea/src/push-mirror.ts" lines="63-76" hash="da239b9c05d5" blob="46ec768c6174" */}
 

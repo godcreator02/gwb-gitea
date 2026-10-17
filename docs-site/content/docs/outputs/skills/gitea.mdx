@@ -6,7 +6,7 @@ description: 要对 gitea 发 API 调用时读——建仓（个人名下或组�
 
 # 用 gitea.http 调 gitea API
 
-这个插件的主命令是 `gitea.http`，能发任意 gitea REST API 调用：你（agent）按 gitea 的 API 文档拼好调用，
+这个插件的主命令是 `gitea.http`，能发任意 gitea REST API 调用：你（agent）按 gitea 的 API 文档组装好调用，
 它负责补 `/api/v1` 前缀、带上 token、发请求、整理回执。**没有**建仓命令、发版命令——那些是下面的调用写法，不是代码。
 另一条命令 `gitea.push-mirror.add` 只用来开推送镜像：它要把 GitHub token 交给 gitea，token 只能从设置里取、不能经你的参数，
 所以单独成一条命令，见「开推送镜像」一节。
@@ -189,7 +189,7 @@ gitea 是主仓；公开的仓由 gitea 的推送镜像同步到 GitHub `godcrea
    ```
 
    `repo` 是 gitea 上的 owner/name，`github` 是 GitHub 上的 owner/name，都必填、不收别的参数。gitea token 要有这个仓的管理权限。
-   镜像每 8 小时同步一次，gitea 上每次推送后也同步。回执是 gitea 记下的镜像信息：
+   镜像每小时同步一次，gitea 上每次推送后也同步；某次没推成（NAS 连不上 GitHub），最晚一小时后自动再推。回执是 gitea 记下的镜像信息：
    `{ repo_name, remote_name, remote_address, interval, sync_on_commit, created, last_update, last_error }`，不含 token。
    GitHub token 没配、参数不对直接报错；gitea 回非 2xx 也报错，带状态码与 gitea 的 message
 
@@ -204,6 +204,7 @@ gitea.http { "method": "DELETE", "path": "/repos/{owner}/{repo}/push_mirrors/{na
 开完先手动同步一次，再 `GET` 看 `last_error` 为空、`last_update` 有时间，GitHub 仓页面上能看到最新提交才算成。
 `last_error` 里有 `403` 或 `Authentication failed`，是 GitHub token 的权限或仓库范围不够，让用户重新生成后在设置界面改填；
 同一个仓重复开会多出一条镜像，先 `GET` 看有没有再开。
+gitea 没有改已有镜像的接口：要换间隔（比如照新版本的间隔重开），先 `DELETE` 那条镜像，再用 `gitea.push-mirror.add` 重开一条。
 
 ## 状态码读法
 

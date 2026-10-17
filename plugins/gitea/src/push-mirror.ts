@@ -3,7 +3,7 @@ import { isRecord } from './vocab.js'
 
 /** 设置键不带分区：分区由条目 id 最后一段决定，完整的名字是 gitea.github-token */
 export const GITHUB_TOKEN_KEY = 'github-token'
-export const PUSH_MIRROR_INTERVAL = '8h0m0s'
+export const PUSH_MIRROR_INTERVAL = '1h0m0s'
 
 /** gitea 与 GitHub 的 owner 和仓名都只由这些字符组成 */
 const REPO_FULL_NAME = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/

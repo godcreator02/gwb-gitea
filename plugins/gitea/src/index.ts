@@ -194,7 +194,7 @@ export function apply(ctx: GwbContext): void {
       name: 'gitea.push-mirror.add',
       description: '给 gitea 上的仓开一条推送镜像，同步到 GitHub 上的仓；GitHub token 取自设置 gitea.github-token，不经参数。写法见 skill「gitea」的「开推送镜像」',
       usage:
-        '参数 { repo, github }：repo 是 gitea 上的 owner/name，github 是 GitHub 上的 owner/name，不收别的参数。GitHub token 由用户在设置界面填进 gitea.github-token，没配直接报错。镜像每 8 小时同步一次，gitea 上每次推送后也同步。回 { repo_name, remote_name, remote_address, interval, sync_on_commit, created, last_update, last_error }，不含 token；gitea 回非 2xx 报错，带状态码与 gitea 的 message',
+        '参数 { repo, github }：repo 是 gitea 上的 owner/name，github 是 GitHub 上的 owner/name，不收别的参数。GitHub token 由用户在设置界面填进 gitea.github-token，没配直接报错。镜像每小时同步一次，gitea 上每次推送后也同步。回 { repo_name, remote_name, remote_address, interval, sync_on_commit, created, last_update, last_error }，不含 token；gitea 回非 2xx 报错，带状态码与 gitea 的 message',
       effect: 'external',
     },
     (args: unknown) => addPushMirror(args),

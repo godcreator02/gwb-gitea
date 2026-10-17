@@ -213,7 +213,7 @@ describe('gitea.push-mirror.add', () => {
     repo_name: 'gwb-gitea',
     remote_name: 'remote_mirror_abc',
     remote_address: 'https://github.com/godcreator02/gwb-gitea.git',
-    interval: '8h0m0s',
+    interval: '1h0m0s',
     sync_on_commit: true,
     created: '2026-10-16T10:00:00+08:00',
     last_update: '',
@@ -251,7 +251,7 @@ describe('gitea.push-mirror.add', () => {
     expect(calls).toHaveLength(0)
   })
 
-  it('请求形状：POST 到 gitea 仓的 push_mirrors，带 gitea token 头，body 里是 GitHub 地址、owner、token、8 小时与推送即同步', async () => {
+  it('请求形状：POST 到 gitea 仓的 push_mirrors，带 gitea token 头，body 里是 GitHub 地址、owner、token、1 小时与推送即同步', async () => {
     const h = harness({ token: 'gitea-tok', 'github-token': GITHUB_TOKEN })
     apply(h.ctx)
     const calls = stubGiteaReply(201, giteaMirror)
@@ -265,7 +265,7 @@ describe('gitea.push-mirror.add', () => {
       remote_address: 'https://github.com/godcreator02/gwb-gitea.git',
       remote_username: 'godcreator02',
       remote_password: GITHUB_TOKEN,
-      interval: '8h0m0s',
+      interval: '1h0m0s',
       sync_on_commit: true,
     })
   })
@@ -280,7 +280,7 @@ describe('gitea.push-mirror.add', () => {
       repo_name: 'gwb-gitea',
       remote_name: 'remote_mirror_abc',
       remote_address: 'https://github.com/godcreator02/gwb-gitea.git',
-      interval: '8h0m0s',
+      interval: '1h0m0s',
       sync_on_commit: true,
       created: '2026-10-16T10:00:00+08:00',
       last_update: '',
